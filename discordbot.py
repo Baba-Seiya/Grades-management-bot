@@ -48,7 +48,10 @@ class PlayerManager:
         print(self,self.win,self.match,self.winRate,self.id)
 
 
-
+# カスタム絵文字
+EmojiA = "🅰️"
+EmojiD = "\N{Turtle}"
+EmojiOK= "🆗"
 
 # 起動時に動作する処理
 @client.event
@@ -72,7 +75,8 @@ async def on_message(message):
     
     #選手の登録
     if message.content == "!regist":
-        for i in member:   #重複登録をさせないための処理
+        #重複登録をさせないための処理
+        for i in member:   
             if message.author.id == i:
                 content = "登録済みです"
                 await message.channel.send(content)
@@ -81,17 +85,28 @@ async def on_message(message):
             member.append(message.author.id)
             instanceName.append(str(message.author))
             instanceName[x] = PlayerManager(message.author.id,message.author) #インスタンス名をどうにかする
-            content = str(message.author) + "さん登録しました"
+            content = str(message.author) + "さんを登録しました"
             await message.channel.send(content)
             x += 1
     
-    #戦績の記録
+    #戦績の記録（手動メンションタイプ）
     if message.content == "!match":
         lose = [] #勝ち負けに適応したリストにインスタンス名をぶっこむ
         win = []  
-        #動作確認のためboombot、lose win処理割愛
-        for i in instanceName:
-            i.winMatch()
+        content = f"A = Attacker {EmojiD} = Diffender を選択して、完了したらOKを押してください。"
+        msg = await message.channel.send(content)
+
+        await msg.add_reaction(EmojiA)
+        await msg.add_reaction(EmojiD)
+        await msg.add_reaction(EmojiOK)
+        #リアクションを付けた時の動作へ
+
+
+
+
+    #動作確認のためboombot、lose win処理割愛
+    #for i in instanceName:
+    #   i.winMatch()
     
     #戦績の表示
     if message.content == "!score":
