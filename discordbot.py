@@ -48,6 +48,63 @@ class PlayerManager:
     def print(self):       #デバック用
         print(self,self.win,self.match,self.winRate,self.id)
 
+#変数を別ファイルに保存する関数たち
+
+def newVariableFile():
+    global member
+    global memberID
+    global instanceName
+    with open('variable.pickle', mode='wb') as f:
+            pickle.dump(memberID, f)
+            pickle.dump(instanceName, f)
+
+#保存用の関数
+def saveVariableFile():
+    global member
+    global memberID
+    global instanceName
+
+    keylist=[]
+    vallist=[]
+                                #不思議なことが起きたもんだ、なんで動いているのか、なんでエラーが出ないのかが分からないんだ。
+                                # マストだと思ってたinstanceNameが引き継げなくてもなぜか動いてるんだ分からないけどうごいてるからいっか
+    for key in member:
+        val = member[key]
+        keylist.append(key)
+        vallist.append(val)
+    
+    #pickeleを使用し別のファイルに変数、リストを保存
+    with open('variable.pickle', mode='wb') as f:
+
+        pickle.dump(keylist, f)
+        pickle.dump(keylist,f)
+        pickle.dump(memberID,f)
+        pickle.dump(member,f)
+        
+
+
+
+#読み込みの関数
+def loadVariableFile():
+    global member
+    global memberID
+    global instanceName
+    keylist = []
+    #pickleで保存したデータの読み込み
+    with open('variable.pickle', mode='rb') as f:
+        try:
+            keylist = pickle.load(f)
+            memberID = pickle.load(f)
+            instanceName =pickle.load(f)
+            member = pickle.load(f)
+        except EOFError :
+            pass
+    try:
+        for i in range(keylist.length):
+            key = keylist[i]
+            member[key] = instanceName[i]
+    except AttributeError:
+        pass
 
 # カスタム絵文字
 EmojiA = "🅰️"
@@ -59,6 +116,14 @@ EmojiL = "❌"
 # 起動時に動作する処理
 @client.event
 async def on_ready():
+    global member
+    global memberID
+    global instanceName
+
+    #初めてプログラムを動かす場合下のコメントアウトを外す
+    #newVariableFile()
+    loadVariableFile()
+    
     # 起動したらターミナルにログイン通知が表示される
     print('ログインしました')
 
@@ -103,15 +168,15 @@ async def on_message(message):
     if message.content == "!regist":
         for i in memberID:
             #重複登録をさせないための処理
-            if message.author.id == i:
+            if str(message.author.id) == i:
                 content = "登録済みです"
                 await message.channel.send(content)
                 break
         else:
-            memberID.append(message.author.id)        #下3行クラス、dictへ追加
-            instanceName.append(str(message.author))
-            instanceName[x] = PlayerManager(message.author.id,message.author)
-            member[message.author.id] = instanceName[x]
+            memberID.append(str(message.author.id))      
+            instanceName.append(message.author)
+            instanceName[x] = PlayerManager(str(message.author.id),str(message.author))
+            member[str(message.author.id)] = instanceName[x]
             content = str(message.author) + "さんを登録しました"
             await message.channel.send(content)
             x += 1
@@ -140,7 +205,8 @@ async def on_message(message):
         await message.channel.send(content)
 
     #botを終了させるコマンド
-    if message.content == "!exit": 
+    if message.content == "!exit":
+        saveVariableFile()
         exit()
     
     #デバック用
@@ -174,19 +240,19 @@ async def on_reaction_add(reaction, user):
 #勝敗登録  
     if emoji == EmojiW:
         for i in A:
-            instance = member[i]
+            instance = member[str(i)]
             instance.winMatch()
         for i in D:
-            instance = member[i]
+            instance = member[str(i)]
             instance.loseMatch()
         await channel.send('Attackerが勝ちとして記録しました。戦績を見る場合は!score')
     
     if emoji == EmojiL:
         for i in D:
-            instance = member[i]
+            instance = member[str(i)]
             instance.winMatch()
         for i in A:
-            instance = member[i]
+            instance = member[str(i)]
             instance.loseMatch()
         await channel.send("Defenderが勝ちとして記録しました。戦績を見る場合は!score")
 # Botの起動とDiscordサーバーへの接続
