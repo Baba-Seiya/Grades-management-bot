@@ -21,3 +21,5 @@ discord.pyを開いて主に使われるテキストチャンネルのidを164�
 
 ４．botの終了　＊重要＊
 botを終了させる際は必ず!exitを使用してください。!exitを使用した際にvariableファイルに戦績を記録してます。そのまま強制終了させると戦績が引き継げません
+
+https://discord.com/api/oauth2/authorize?client_id=899452828882456586&permissions=534723950656&scope=bot

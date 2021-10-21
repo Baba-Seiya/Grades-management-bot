@@ -4,7 +4,7 @@ import pickle
 import asyncio
 
 # 自分のBotのアクセストークンに置き換えてください
-TOKEN = 'ODk5NDUyODI4ODgyNDU2NTg2.YWy-uQ.1EBAeA10aEWGDWQh8WVFecsFah4'
+TOKEN = ''
 
 # 接続に必要なオブジェクトを生成
 client = discord.Client()
