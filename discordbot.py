@@ -42,14 +42,14 @@ class PlayerManager:
         self.winRate = self.win / self.match * 100
     
     def score(self):       #表示するときの処理
-        m ="名前:"+ str(self.name) +" 勝率:" + str(round(self.winRate,1)) + "% 勝ち数:" + str(self.win) + " 試合回数:"+str(self.match)
+        m = str(self.name) +" 勝率:" + str(round(self.winRate,1)) + "% 勝ち数:" + str(self.win) + " 試合回数:"+str(self.match)        
         return m
 
     def print(self):       #デバック用
         print(self,self.win,self.match,self.winRate,self.id)
 
 #変数を別ファイルに保存する関数たち
-
+#新しくファイルを作るとき
 def newVariableFile():
     global member
     global memberID
@@ -83,7 +83,6 @@ def saveVariableFile():
         
 
 
-
 #読み込みの関数
 def loadVariableFile():
     global member
@@ -105,6 +104,28 @@ def loadVariableFile():
             member[key] = instanceName[i]
     except AttributeError:
         pass
+
+#勝率順にソートする関数
+def sort():
+    global member
+    beforeList = []
+    afterList = []
+    for key in member:
+        val = member[key]
+        beforeList.append([val.winRate,val])
+    for i in range(len(beforeList)):
+        r = beforeList[i]
+        if i == 0:
+            afterList.append(beforeList[i])
+        else:
+            k = afterList[0]
+            if r[0] > k[0]:
+                afterList.insert(0,beforeList[i]) 
+            else:
+                afterList.append(beforeList[i])
+    return afterList
+    
+
 
 # カスタム絵文字
 EmojiA = "🅰️"
@@ -195,9 +216,16 @@ async def on_message(message):
     #戦績の表示
     if message.content == "!score":
         #製品版は勝率順にソートする
-        for i in member:
+        list = sort()
+        x = 1
+        for i in list:
+            await message.channel.send(str(x) + "．" + i[1].score())
+            x += 1
+        
+        
+        """for i in member:
             instancename = member[i]
-            await message.channel.send(instancename.score())
+            await message.channel.send(instancename.score())"""
 
     #help
     if message.content == "!help":
