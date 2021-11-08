@@ -1,10 +1,11 @@
 # インストールした discord.py を読み込む
+from typing import Match
 import discord
 import pickle
 import asyncio
 
 # 自分のBotのアクセストークンに置き換えてください
-TOKEN = ''
+TOKEN = 'ODk5NDUyODI4ODgyNDU2NTg2.YWy-uQ.O25qWzauHJ0jnnyyXK0VBx2A1rA'
 
 # 接続に必要なオブジェクトを生成
 client = discord.Client()
@@ -62,7 +63,14 @@ class PlayerManager:
     def countdownMatch(self):
         self.match -= 1
         self.winRate = self.win / self.match * 100
+    
+    def setMatch(self,x):
+        self.match = x
+        self.winRate = self.win / self.match * 100
 
+    def setWin(self,x):
+        self.win = x
+        self.winRate = self.win / self.match * 100
 #-------------------------定義関数--------------------
 #変数を別ファイルに保存する関数たち
 #新しくファイルを作るとき
@@ -270,12 +278,16 @@ async def on_message(message):
             g = memberNames[i]
             print(i + " " + g)
         key = input("操作するIDを選んでください：")
-        cnt = input("操作内容を打ってください（upmatch, downmachなど）：")
-        con = input("操作回数を選んでください：")
-        con = int(con)
+        win = input("勝利数を入力してください：")
+        match = input("対戦回数を入力してください：")
+        
+        win = int(win)
+        match  = int(match)
         val = member[str(key)]
         
-        if cnt == "upmatch":
+        val.setMatch(match)
+        val.setWin(win)
+        """if cnt == "upmatch":
             for i in range(con):
                 val.countupMatch()
         if cnt == "downmatch":
@@ -286,7 +298,7 @@ async def on_message(message):
                 val.countupWin()
         if cnt == "downwin":
                 val.countdownWin()
-
+"""
 #---------------------リアクションがついた時の動作----------------------
 @client.event
 async def on_reaction_add(reaction, user):
