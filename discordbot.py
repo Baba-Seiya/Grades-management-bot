@@ -3,9 +3,10 @@ from typing import Match
 import discord
 import pickle
 import asyncio
+import re
 
 # 自分のBotのアクセストークンに置き換えてください
-TOKEN = 'ODk5NDUyODI4ODgyNDU2NTg2.YWy-uQ.O25qWzauHJ0jnnyyXK0VBx2A1rA'
+TOKEN = ''
 
 # 接続に必要なオブジェクトを生成
 client = discord.Client()
@@ -165,6 +166,14 @@ def reset():
     A = []
     D = []
 
+#memberNamesの値からキーを抽出する関数　（boombot連動!matchにて使用）
+def get_key(val):
+    for key, value in memberNames.items():
+         if val == value:
+             return key
+ 
+    return "There is no such Key"
+
 #--------------------------変数置き場-------------------------
 memberID = ["kame"] #重複登録確認用ID置き場
 member = {} #キー=id,値=インスタンス名のdict  
@@ -172,8 +181,9 @@ instanceName = [] #インスタンス名の管理用 (表示名で登録 message
 memberNames = {} #キー=表示名, 値=id
 lose = [] #勝ち負けに適応したリストにインスタンス名をぶっこむ
 win = []
-A = []
+A = [] #userIDが入る
 D = []
+id_list = []
 #任意のチャンネルIDを記述
 ch_id = 899475209214627863
 
@@ -206,7 +216,49 @@ async def on_ready():
 # ------------------メッセージ受信時に動作する処理------------
 @client.event
 async def on_message(message):
-    x = 0  #クラス変数が使えな勝ったので選手の数とする
+    x = 0  #クラス変数が使えな勝ったので選手の数とする,選手の登録で使用
+
+    #boombot連動!match
+    if message.content[:8] == "!match!b":
+        if len(message.content) == 26:
+                global ch_id 
+                global A
+                global D
+                global id_list
+            
+                reset()
+
+                channel = client.get_channel(ch_id)
+                message = await channel.fetch_message(int(message.content[8:]))
+
+                #正規表現にてユーザーidを抜き出す
+                msg = message.content
+                id_list = re.findall(r'@[\S]{1,18}',msg)
+                x = round(len(id_list)/2)
+                #Attackerに振り分ける処理
+                await message.channel.send("Attacer:")
+                for i in range(x):
+                    id = id_list[i]
+                    name = get_key(id[1:])
+                    A.append(id[1:])
+                    content = name
+                    await message.channel.send(content)
+
+                #Defenderに振り分ける処理
+                await message.channel.send("Defender:")
+                for i in range(x,len(id_list)):
+                    id = id_list[i]
+                    name = get_key(id[1:])
+                    D.append(id[1:])
+                    content = name
+                    await message.channel.send(content)
+                
+                content = f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+                
+                msg = await message.channel.send(content)
+                await msg.add_reaction(EmojiOK)
+                await msg.add_reaction(EmojiC)
+
 
     # メッセージ送信者がBotだった場合は無視する
     if message.author.bot:
@@ -258,7 +310,7 @@ async def on_message(message):
 
     #help
     if message.content == "!help":
-        content = "選手の登録　!regist\n戦績の記録　!match\n戦績の表示　!score\nbotの終了   　!exit"
+        content = "選手の登録　!regist\n戦績の記録　!match\n戦績の表示　!score\nbotの終了   　!exit\nboombot連動記録 !match!b<messageid>"
         await message.channel.send(content)
 
     #botを終了させるコマンド
@@ -287,18 +339,6 @@ async def on_message(message):
         
         val.setMatch(match)
         val.setWin(win)
-        """if cnt == "upmatch":
-            for i in range(con):
-                val.countupMatch()
-        if cnt == "downmatch":
-            for i in range(con):
-                val.countdownMatch()
-        if cnt == "upwin":
-            for i in range(con):
-                val.countupWin()
-        if cnt == "downwin":
-                val.countdownWin()
-"""
 #---------------------リアクションがついた時の動作----------------------
 @client.event
 async def on_reaction_add(reaction, user):
@@ -307,7 +347,7 @@ async def on_reaction_add(reaction, user):
     if user.bot:
         return
     emoji =  reaction.emoji
-#選手の振り分け    
+#選手の振り分け  (リアクションタイプ)
     #Attackerへの振り分け
     if emoji == EmojiA:
         for i in A:
