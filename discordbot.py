@@ -6,7 +6,7 @@ import asyncio
 import re
 
 # 自分のBotのアクセストークンに置き換えてください
-TOKEN = ''
+TOKEN = 'ODk5NDUyODI4ODgyNDU2NTg2.YWy-uQ.nbtcWcwBDHM3O0Yp6WtqnKAZrrU'
 
 # 接続に必要なオブジェクトを生成
 client = discord.Client()
@@ -217,47 +217,93 @@ async def on_ready():
 @client.event
 async def on_message(message):
     x = 0  #クラス変数が使えな勝ったので選手の数とする,選手の登録で使用
+    #boombot自動連動!match!b
+    if message.content == "!match!b":
+        global ch_id 
+        global A
+        global D
+        global id_list
 
-    #boombot連動!match
+        reset()
+        #boombotのメッセージを検索する
+        channel = client.get_channel(ch_id)
+        msgList = await channel.history(limit=10).flatten()
+        for i in msgList:
+            match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
+            if match_result:
+                msgID = i.id
+                break
+            else:
+                continue
+
+
+        message = await channel.fetch_message(msgID)
+
+        #正規表現にてユーザーidを抜き出す
+        msg = message.content
+        id_list = re.findall(r'@[\S]{1,18}',msg)
+        x = round(len(id_list)/2)
+        #Attackerに振り分ける処理
+        await message.channel.send("Attacer:")
+        for i in range(x):
+            id = id_list[i]
+            name = get_key(id[1:])
+            A.append(id[1:])
+            content = name
+            await message.channel.send(content)
+
+        #Defenderに振り分ける処理
+        await message.channel.send("Defender:")
+        for i in range(x,len(id_list)):
+            id = id_list[i]
+            name = get_key(id[1:])
+            D.append(id[1:])
+            content = name
+            await message.channel.send(content)
+        
+        content = f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        
+        msg = await message.channel.send(content)
+        await msg.add_reaction(EmojiOK)
+        await msg.add_reaction(EmojiC)
+
+
+
+    #boombot連動!match ID検索
     if message.content[:8] == "!match!b":
         if len(message.content) == 26:
-                global ch_id 
-                global A
-                global D
-                global id_list
+            reset()
+
+            channel = client.get_channel(ch_id)
+            message = await channel.fetch_message(int(message.content[8:]))
+
+            #正規表現にてユーザーidを抜き出す
+            msg = message.content
+            id_list = re.findall(r'@[\S]{1,18}',msg)
+            x = round(len(id_list)/2)
+            #Attackerに振り分ける処理
+            await message.channel.send("Attacer:")
+            for i in range(x):
+                id = id_list[i]
+                name = get_key(id[1:])
+                A.append(id[1:])
+                content = name
+                await message.channel.send(content)
+
+            #Defenderに振り分ける処理
+            await message.channel.send("Defender:")
+            for i in range(x,len(id_list)):
+                id = id_list[i]
+                name = get_key(id[1:])
+                D.append(id[1:])
+                content = name
+                await message.channel.send(content)
             
-                reset()
-
-                channel = client.get_channel(ch_id)
-                message = await channel.fetch_message(int(message.content[8:]))
-
-                #正規表現にてユーザーidを抜き出す
-                msg = message.content
-                id_list = re.findall(r'@[\S]{1,18}',msg)
-                x = round(len(id_list)/2)
-                #Attackerに振り分ける処理
-                await message.channel.send("Attacer:")
-                for i in range(x):
-                    id = id_list[i]
-                    name = get_key(id[1:])
-                    A.append(id[1:])
-                    content = name
-                    await message.channel.send(content)
-
-                #Defenderに振り分ける処理
-                await message.channel.send("Defender:")
-                for i in range(x,len(id_list)):
-                    id = id_list[i]
-                    name = get_key(id[1:])
-                    D.append(id[1:])
-                    content = name
-                    await message.channel.send(content)
-                
-                content = f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
-                
-                msg = await message.channel.send(content)
-                await msg.add_reaction(EmojiOK)
-                await msg.add_reaction(EmojiC)
+            content = f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+            
+            msg = await message.channel.send(content)
+            await msg.add_reaction(EmojiOK)
+            await msg.add_reaction(EmojiC)
 
 
     # メッセージ送信者がBotだった場合は無視する
@@ -310,7 +356,7 @@ async def on_message(message):
 
     #help
     if message.content == "!help":
-        content = "選手の登録　!regist\n戦績の記録　!match\n戦績の表示　!score\nbotの終了   　!exit\nboombot連動記録 !match!b<messageid>"
+        content = "選手の登録　!regist\n戦績の記録　!match\n戦績の表示　!score\nbotの終了   　!exit\nboombot連動記録 !match!b または !match!b<messege id を指定>"
         await message.channel.send(content)
 
     #botを終了させるコマンド
