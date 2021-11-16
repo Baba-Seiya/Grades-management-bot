@@ -6,7 +6,7 @@ import asyncio
 import re
 
 # 自分のBotのアクセストークンに置き換えてください
-TOKEN = 'ODk5NDUyODI4ODgyNDU2NTg2.YWy-uQ.nbtcWcwBDHM3O0Yp6WtqnKAZrrU'
+TOKEN = ''
 
 # 接続に必要なオブジェクトを生成
 client = discord.Client()
