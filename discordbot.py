@@ -332,7 +332,7 @@ async def on_message(message):
     #戦績の記録（手動メンションタイプ）
     if message.content == "!match":
           
-        content = f"{EmojiA} = Attacker   {EmojiD} = Defender を選択して、完了したら{EmojiOK}を押してください。キャンセルは🚫"
+        content = f"{EmojiA} = Attacker   {EmojiD} = Defender を選択して、完了したら{EmojiOK}を押してください。キャンセルは{EmojiC}"
         msg = await message.channel.send(content)
 
         await msg.add_reaction(EmojiA)
@@ -432,7 +432,7 @@ async def on_reaction_add(reaction, user):
 
     #完了した時の処理
     if emoji == EmojiOK:
-        content = "どっちが勝ちましたか?\n Attackerが勝った場合✅　負けた場合❌を押してください キャンセルは🚫"
+        content = f"どっちが勝ちましたか?\n Attackerが勝った場合{EmojiW}　負けた場合{EmojiL}を押してください キャンセルは{EmojiC}"
         msg = await channel.send(content)
         await msg.add_reaction(EmojiW)
         await msg.add_reaction(EmojiL)
