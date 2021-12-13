@@ -17,62 +17,125 @@ client = discord.Client()
 class PlayerManager:
     #クラス変数
     count = 0   #総選手数
+    serverid = [] #サーバー集合を作成
     @classmethod
-    def countup(cls):
+    def countup(cls,serverid):
         cls.count += 1
+        if serverid not in cls.serverid: 
+            cls.serverid.add(serverid)
+            exec("serverList.append([i,[],[],[],[]]",globals)
 
-    #コンストラクタ
-    def __init__(self, userID, name):
-        self.win = 0       #勝利数
-        self.match = 0     #対戦回数
+    #コンストラクタ(初回登録時起動)
+    def __init__(self, userID, name,serverid):
+        self.win = []       #勝利数   ↓全てリストに変更
+        self.match = []     #対戦回数
         self.id = userID   #ユーザーID
-        self.winRate = 0   #勝率
+        self.winRate = []   #勝率
         self.name = name   #表示名
-        PlayerManager.countup()
+        self.serverid = [] #サーバー別管理の為のリスト
+        self.serverid.append(serverid)
+        self.win.append(0)       #勝利数   ↓全てリストに変更
+        self.match.append(0)     #対戦回数
+        self.winRate.append(0)   #勝率
+        PlayerManager.countup(serverid)
         print(self.name,self.win,self.match,self.winRate,self.id)
 
 
     #インスタンスメソッド
-    def winMatch(self):    #勝った時の処理
-        self.win += 1
-        self.match += 1
+
+    #サーバー別で登録するメソッド
+    def registServerID(self,serverid):
+        self.serverid.append(serverid)
+        self.win.append(0)
+        self.match.append(0)
+        self.winRate.append(0)
+
+    def winMatch(self,serverid):    #勝った時の処理
+        try:
+            x = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません:" +serverid)
+        
+        self.win[x]  += 1
+        self.match[x] += 1
         #勝率の計算
-        self.winRate = self.win / self.match * 100
+        self.winRate[x] = self.win[x] / self.match[x]* 100
 
     
-    def loseMatch(self):   #負けた時の処理
-        self.match += 1
+    def loseMatch(self,serverid):   #負けた時の処理
+        try:
+            x = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません:" +serverid)
+        
+        self.match[x] += 1
         #勝率の計算
-        self.winRate = self.win / self.match * 100
+        self.winRate[x] = self.win[x] / self.match[x]* 100
+
     
-    def score(self):       #表示するときの処理
-        m = str(self.name) +" 勝率:" + str(round(self.winRate,1)) + "% 勝ち数:" + str(self.win) + " 試合回数:"+str(self.match)        
+    def score(self,serverid):       #表示するときの処理
+        try:
+            x = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません:" +serverid)
+        
+        m = str(self.name) +" 勝率:" + str(round(self.winRate[x],1)) + "% 勝ち数:" + str(self.win[x]) + " 試合回数:"+str(self.match[x])        
         return m
 
     def print(self):       #デバック用
         print(self,self.win,self.match,self.winRate,self.id)
 
     #win 対戦回数の調整用のインスタンス
-    def countupWin(self):
-        self.win += 1
-        self.winRate = self.win / self.match * 100
-    def countdownWin(self):
-        self.win -= 1
-        self.winRate = self.win / self.match * 100
-    def countupMatch(self):
-        self.match += 1
-        self.winRate = self.win / self.match * 100
-    def countdownMatch(self):
-        self.match -= 1
-        self.winRate = self.win / self.match * 100
+    def countupWin(self,serverid):
+        try:
+            x = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません")
+        
+        self.win[x] += 1
+        self.winRate[x] = self.win[x] / self.match[x] * 100
+    def countdownWin(self,serverid):
+        try:
+            x = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません")
+        
+        self.win[x] -= 1
+        self.winRate[x] = self.win[x] / self.match[x] * 100
+    def countupMatch(self,serverid):
+        try:
+            x = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません")
+        
+        self.match[x] += 1
+        self.winRate[x] = self.win[x] / self.match[x] * 100
+    def countdownMatch(self,serverid):
+        try:
+            x = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません")
+        
+        self.match[x] -= 1
+        self.winRate[x] = self.win[x] / self.match[x] * 100
     
-    def setMatch(self,x):
-        self.match = x
-        self.winRate = self.win / self.match * 100
+    def setMatch(self,x,serverid):
+        try:
+            y = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません")
+        
+        self.match[y] = x
+        self.winRate[y] = self.win[y] / self.match[y] * 100
 
-    def setWin(self,x):
-        self.win = x
-        self.winRate = self.win / self.match * 100
+    def setWin(self,x,serverid):
+        try:
+            y = self.serverid.index(serverid)
+        except ValueError:
+            print("このサーバー登録されてません")
+        
+        self.win[y] = x
+        self.winRate[y] = self.win[y] / self.match[y] * 100
 #-------------------------定義関数--------------------
 #変数を別ファイルに保存する関数たち
 #新しくファイルを作るとき
@@ -174,7 +237,39 @@ def get_key(val):
              return key
  
     return "There is no such Key"
+#serverListをいじる関数　classでもよかったかな？
+def serch_server(serverid):
+    global serverList
+    for i in serverList:
+        if i[0] == serverid:
+                return i 
+    print("serch_server＞サーバーが見つかりませんでした")    
 
+def set_A(serverid,val):
+    global serverList
+    list = serch_server(serverid)
+    list[3].append(val)
+
+def set_D(serverid,val):
+    global serverList
+    list = serch_server(serverid)
+    list[4].append(val)
+
+def set_Win(serverid,val):
+    global serverList
+    list = serch_server(serverid)
+    list[1].append(val)
+
+def set_Lose(serverid,val):
+    global serverList
+    list = serch_server(serverid)
+    list[2].append(val)
+
+def clean(serverid):
+    global serverList
+    list = serch_server(serverid)
+    for i in range(1,5):
+        list[i] = []
 #--------------------------変数置き場-------------------------
 memberID = ["kame"] #重複登録確認用ID置き場
 member = {} #キー=id,値=インスタンス名のdict  
@@ -185,6 +280,7 @@ win = []
 A = [] #userIDが入る
 D = []
 id_list = []
+serverList = []#各サーバーに対して[[serverid,[win],[lose],[A],[D]],…]のリスト
 #任意のチャンネルIDを記述
 ch_id = 899475209214627863
 
@@ -208,6 +304,8 @@ async def on_ready():
     #初めてプログラムを動かす場合下のコメントアウトを外す
     #newVariableFile()
     loadVariableFile()
+    for i in range(PlayerManager.serverid):
+        exec("serverList.append([i,[],[],[],[]])",globals())#各サーバーに対して[[serverid,[win],[lose],[A],[D]],]のリストを作る。
     
     # 起動したらターミナルにログイン通知が表示される
     print('ログインしました')
@@ -217,17 +315,19 @@ async def on_ready():
 # ------------------メッセージ受信時に動作する処理------------
 @client.event
 async def on_message(message):
+    global serverList
+    global ch_id 
+    global A
+    global D
+    global id_list
+    svid = message.guild.id  #どのサーバーから来たか分かるように定義する。
     x = 0  #クラス変数が使えな勝ったので選手の数とする,選手の登録で使用
+    channel = client.get_channel(message.channel.id)
+
     #boombot自動連動!match!b
     if message.content == "!match!b":
-        global ch_id 
-        global A
-        global D
-        global id_list
-
         reset()
         #boombotのメッセージを検索する
-        channel = client.get_channel(ch_id)
         msgList = await channel.history(limit=10).flatten()
         for i in msgList:
             match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
@@ -249,7 +349,7 @@ async def on_message(message):
         for i in range(x):
             id = id_list[i]
             name = get_key(id[1:])
-            A.append(id[1:])
+            set_A(svid,id[1:])
             content = name
             await message.channel.send(content)
 
@@ -258,7 +358,7 @@ async def on_message(message):
         for i in range(x,len(id_list)):
             id = id_list[i]
             name = get_key(id[1:])
-            D.append(id[1:])
+            set_D(svid,id[1:])
             content = name
             await message.channel.send(content)
         
@@ -275,7 +375,6 @@ async def on_message(message):
         if len(message.content) == 26:
             reset()
 
-            channel = client.get_channel(ch_id)
             message = await channel.fetch_message(int(message.content[8:]))
 
             #正規表現にてユーザーidを抜き出す
@@ -287,7 +386,7 @@ async def on_message(message):
             for i in range(x):
                 id = id_list[i]
                 name = get_key(id[1:])
-                A.append(id[1:])
+                set_A(svid,id[1:])
                 content = name
                 await message.channel.send(content)
 
@@ -296,7 +395,7 @@ async def on_message(message):
             for i in range(x,len(id_list)):
                 id = id_list[i]
                 name = get_key(id[1:])
-                D.append(id[1:])
+                set_D(svid,id[1:])
                 content = name
                 await message.channel.send(content)
             
@@ -391,7 +490,7 @@ async def on_message(message):
 async def on_reaction_add(reaction, user):
     global ch_id
     channel = client.get_channel(ch_id)
-    if user.bot:
+    if user.bot: #botの場合無視する
         return
     emoji =  reaction.emoji
 #選手の振り分け  (リアクションタイプ)
@@ -406,7 +505,7 @@ async def on_reaction_add(reaction, user):
 
         for i in D:
             if i  == user.id: 
-                content = "重複登録を検知し、キャンセルしました　!matchからやり直してください"
+                content = "重複登録を検知し、キャンセルしました !matchからやり直してください"
                 reset()
                 await channel.send(content)
                 break      
@@ -447,6 +546,7 @@ async def on_reaction_add(reaction, user):
             instance = member[str(i)]
             instance.loseMatch()
         await channel.send('Attackerが勝ちとして記録しました。戦績を見る場合は!score')
+        saveVariableFile()
     
     if emoji == EmojiL:
         for i in D:
@@ -456,6 +556,7 @@ async def on_reaction_add(reaction, user):
             instance = member[str(i)]
             instance.loseMatch()
         await channel.send("Defenderが勝ちとして記録しました。戦績を見る場合は!score")
+        saveVariableFile()
 
     if emoji == EmojiC:
         content = "キャンセルしました　!matchからやり直してください"
