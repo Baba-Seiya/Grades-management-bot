@@ -16,7 +16,7 @@ client = discord.Client()
 class PlayerManager:
     #クラス変数
     count = 0   #総選手数
-    serverid = [] #サーバー集合を作成
+    serverid = [] #サーバーリストを作成
     @classmethod
     def countup(cls,serverid):
         global serverList
@@ -83,6 +83,10 @@ class PlayerManager:
 
         m = str(self.name) +" 勝率:" + str(round(self.winRate[x],1)) + "% 勝ち数:" + str(self.win[x]) + " 試合回数:"+str(self.match[x])        
         return m
+
+    def getWinRate(self,serverid): #ソートするときに使うやつ
+        x = serchIndex(self,serverid)
+        return self.winRate[x]    
 
     def print(self):       #デバック用
         print(self,self.win,self.match,self.winRate,self.id)
@@ -183,13 +187,14 @@ def loadVariableFile():
         pass
 
 #勝率順にソートする関数
-def sort():
+def sort(svid):
     global member
     beforeList = []
     afterList = []
     for key in member:
         val = member[key]
-        beforeList.append([val.winRate,val])
+        x = val.getWinRate(svid)
+        beforeList.append([x,val])
     for i in range(len(beforeList)):
         r = beforeList[i]
         if i == 0:
@@ -216,6 +221,7 @@ def get_key(val):
              return key
  
     return "There is no such Key"
+
 #serverListをいじる関数　classでもよかったかな？
 def serch_server(serverid):
     global serverList
@@ -430,7 +436,7 @@ async def on_message(message):
     #戦績の表示
     if message.content == "!score":
         #製品版は勝率順にソートする
-        list = sort()
+        list = sort(svid)
         x = 1
         for i in list:
             await message.channel.send(str(x) + "．" + i[1].score(svid))
