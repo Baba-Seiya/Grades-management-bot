@@ -436,12 +436,13 @@ async def on_message(message):
     #戦績の表示
     if message.content == "!score":
         #製品版は勝率順にソートする
+        msg = ""
         list = sort(svid)
         x = 1
         for i in list:
-            await message.channel.send(str(x) + "．" + i[1].score(svid))
+            msg += str(x) + "．" + i[1].score(svid) +"\n"
             x += 1
-        
+        await message.channel.send(msg)
         
         """for i in member:
             instancename = member[i]
