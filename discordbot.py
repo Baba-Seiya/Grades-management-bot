@@ -220,7 +220,7 @@ def get_key(val):
          if val == value:
              return key
  
-    return "There is no such Key"
+    return "情報登録がありません !regist で登録してください"
 
 #serverListをいじる関数　classでもよかったかな？
 def serch_server(serverid):
@@ -251,6 +251,17 @@ def serchIndex(self,serverid):
             return self.serverid.index(serverid)
         except ValueError:
             print("class serchindex>サーバーが見つかりません")
+
+#登録情報が見つからない時にキャンセルする処理
+async def memberCheck(channel,key):
+    try:
+        val = member[str(key)]
+    except(KeyError):
+        await channel.send("登録情報が無い人はカウントされていません")
+        return "無"
+    else:
+        return val
+
 #--------------------------変数置き場-------------------------
 memberID = [["kame"]] #重複登録確認用ID置き場[[user.id,serverid,serverid....],[...]]
 member = {} #キー=id,値=インスタンス名のdict  
@@ -258,8 +269,7 @@ instanceName = [] #インスタンス名の管理用 (表示名で登録 message
 memberNames = {} #キー=表示名, 値=id
 A = [] #userIDが入る
 D = []
-serverList = []#各サーバーに対して[[serverid,[A],[D],…]のリスト
-#clsServeridList =[]  
+serverList = []#各サーバーに対して[[serverid,[A],[D],…]のリスト  
 
 
 # カスタム絵文字
@@ -302,8 +312,9 @@ async def on_message(message):
     #boombot自動連動!match!b
     if message.content == "!match!b":
         clean(svid)
+        content = f""
         #boombotのメッセージを検索する
-        msgList = await channel.history(limit=10).flatten()
+        msgList = await channel.history(limit=30).flatten()
         for i in msgList:
             match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
             if match_result:
@@ -312,32 +323,33 @@ async def on_message(message):
             else:
                 continue
 
-
-        message = await channel.fetch_message(msgID)
-
+        try:
+            message = await channel.fetch_message(msgID)
+        except(UnboundLocalError):
+            await message.channel.send("boombotの情報が読み取れませんでした。!match!b<messeageID>で指定してください。")
+            clean(svid)
+            return
         #正規表現にてユーザーidを抜き出す
         msg = message.content
         id_list = re.findall(r'@[\S]{1,18}',msg)
         x = round(len(id_list)/2)
         #Attackerに振り分ける処理
-        await message.channel.send("Attacer:")
+        content += "Attacer:\n"
         for i in range(x):
             id = id_list[i]
             name = get_key(id[1:])
             set_A(svid,id[1:])
-            content = name
-            await message.channel.send(content)
+            content += str(name) +"\n"
 
         #Defenderに振り分ける処理
-        await message.channel.send("Defender:")
+        content += "Defender:\n"
         for i in range(x,len(id_list)):
             id = id_list[i]
             name = get_key(id[1:])
             set_D(svid,id[1:])
-            content = name
-            await message.channel.send(content)
+            content += str(name) + "\n"
         
-        content = f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
         
         msg = await message.channel.send(content)
         await msg.add_reaction(EmojiOK)
@@ -349,7 +361,7 @@ async def on_message(message):
     if message.content[:8] == "!match!b":
         if len(message.content) == 26:
             clean(svid)
-
+            content = f""
             message = await channel.fetch_message(int(message.content[8:]))
 
             #正規表現にてユーザーidを抜き出す
@@ -357,24 +369,22 @@ async def on_message(message):
             id_list = re.findall(r'@[\S]{1,18}',msg)
             x = round(len(id_list)/2)
             #Attackerに振り分ける処理
-            await message.channel.send("Attacer:")
+            content += "Attacer:\n"
             for i in range(x):
                 id = id_list[i]
                 name = get_key(id[1:])
                 set_A(svid,id[1:])
-                content = name
-                await message.channel.send(content)
+                content += str(name) +"\n"
 
             #Defenderに振り分ける処理
-            await message.channel.send("Defender:")
+            content += "Defender:\n"
             for i in range(x,len(id_list)):
                 id = id_list[i]
                 name = get_key(id[1:])
                 set_D(svid,id[1:])
-                content = name
-                await message.channel.send(content)
+                content += str(name) + "\n"
             
-            content = f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+            content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
             
             msg = await message.channel.send(content)
             await msg.add_reaction(EmojiOK)
@@ -472,11 +482,15 @@ async def on_message(message):
         key = input("操作するIDを選んでください：")
         win = input("勝利数を入力してください：")
         match = input("対戦回数を入力してください：")
-        
-        win = int(win)
-        match  = int(match)
-        val = member[str(key)]
-        
+        try:
+            win = int(win)
+            match  = int(match)
+        except(ValueError):
+            print("無効な入力です。")
+        try:
+            val = member[str(key)]
+        except(KeyError):
+            print("見つかりません")
         val.setMatch(match,svid)
         val.setWin(win,svid)
 #---------------------リアクションがついた時の動作----------------------
@@ -538,21 +552,33 @@ async def on_reaction_add(reaction, user):
 #勝敗登録  
     if emoji == EmojiW:
         for i in A:
-            instance = member[str(i)]
-            instance.winMatch(svid)
+            instance = await memberCheck(channel,i)
+            try:
+                instance.winMatch(svid)
+            except:
+                pass
         for i in D:
-            instance = member[str(i)]
-            instance.loseMatch(svid)
+            instance = await memberCheck(channel,i)
+            try:
+                instance.loseMatch(svid)
+            except:
+                pass
         await channel.send('Attackerが勝ちとして記録しました。戦績を見る場合は!score')
         saveVariableFile()
     
     if emoji == EmojiL:
         for i in D:
-            instance = member[str(i)]
-            instance.winMatch(svid)
+            instance = await memberCheck(channel,i)
+            try:
+                instance.winMatch(svid)
+            except:
+                pass
         for i in A:
-            instance = member[str(i)]
-            instance.loseMatch(svid)
+            instance = await memberCheck(channel,i)
+            try:
+                instance.loseMatch(svid)
+            except:
+                pass
         await channel.send("Defenderが勝ちとして記録しました。戦績を見る場合は!score")
         saveVariableFile()
 
@@ -574,4 +600,3 @@ async def on_reaction_remove(reaction, user):
     
 # Botの起動とDiscordサーバーへの接続
 client.run(TOKEN)
-
