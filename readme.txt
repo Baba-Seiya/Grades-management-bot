@@ -23,7 +23,7 @@ NEW!サーバー別に記録できるようになりましたNEW!
 
 ２．２試合結果の登録(boom bot連動タイプ)
 注意！（入力したテキストチャンネルチャンネルid とboom bot が同じテキストチャンネルにメッセージがある必要があります）
-!match!b と入力するとboom botの最新のv.teamの結果を参照してAttackerとDefenderを振り分けてくれます。（!match!b‹messege id›でメッセージIDを指定することも可能
+!match-b と入力するとboom botの最新のv.teamの結果を参照してAttackerとDefenderを振り分けてくれます。（!match-b‹messege id›でメッセージIDを指定することも可能
 振り分けが正しければOKリアクションをしてください。
 後は２．１のリアクションタイプと同じです。
 
