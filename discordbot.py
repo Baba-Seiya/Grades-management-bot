@@ -310,7 +310,7 @@ async def on_message(message):
     channel = client.get_channel(message.channel.id)
 
     #boombot自動連動!match!b
-    if message.content == "!match!b":
+    if message.content == "!match-b":
         clean(svid)
         content = f""
         #boombotのメッセージを検索する
@@ -358,7 +358,7 @@ async def on_message(message):
 
 
     #boombot連動!match ID検索
-    if message.content[:8] == "!match!b":
+    if message.content[:8] == "!match-b":
         if len(message.content) == 26:
             clean(svid)
             content = f""
@@ -460,7 +460,7 @@ async def on_message(message):
 
     #help
     if message.content == "!help":
-        content = "選手の登録　!regist\n戦績の記録　!match\n戦績の表示　!score\nbotの終了   　!exit\nboombot連動記録 !match!b または !match!b<messege id を指定>"
+        content = "選手の登録　!regist\n戦績の記録　!match\n戦績の表示　!score\nbotの終了   　!exit\nboombot連動記録 !match-b または !match!b<messege id を指定>"
         await message.channel.send(content)
 
     #botを終了させるコマンド
