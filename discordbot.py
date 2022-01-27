@@ -270,7 +270,7 @@ memberNames = {} #キー=表示名, 値=id
 A = [] #userIDが入る
 D = []
 serverList = []#各サーバーに対して[[serverid,[A],[D],…]のリスト  
-
+match_str = "\*\*Information\*\*" #match-bにて探す文章を指す変数
 
 # カスタム絵文字
 EmojiA = "🅰️"
@@ -304,6 +304,7 @@ async def on_message(message):
     global serverList
     global A
     global D
+    global match_str
     id_list = [] #boombot 連携にて使用　使い方忘れた
     svid = message.guild.id  #どのサーバーから来たか分かるように定義する。
     x = 0  #クラス変数が使えな勝ったので選手の数とする,選手の登録で使用
@@ -316,7 +317,7 @@ async def on_message(message):
         #boombotのメッセージを検索する
         msgList = await channel.history(limit=30).flatten()
         for i in msgList:
-            match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
+            match_result = re.match(rf"{match_str}", i.content)
             if match_result:
                 msgID = i.id
                 break
