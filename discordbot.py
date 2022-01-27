@@ -240,12 +240,14 @@ def set_D(serverid,val):
     list = serch_server(serverid)
     list[2].append(val)
 
+#serverListをリセットする関数
 def clean(serverid):
     global serverList
     list = serch_server(serverid)
     for i in range(1,3):
         list[i] = []
 
+#indexを返す
 def serchIndex(self,serverid):
         try:
             return self.serverid.index(serverid)
@@ -493,6 +495,27 @@ async def on_message(message):
             print("見つかりません")
         val.setMatch(match,svid)
         val.setWin(win,svid)
+
+    """ #edit
+    if message.content[:8] == "!edit ":
+        for i in memberNames:
+            g = memberNames[i]
+            print(i + " " + g)
+        key = input("操作するIDを選んでください：")
+        win = input("勝利数を入力してください：")
+        match = input("対戦回数を入力してください：")
+        try:
+            win = int(win)
+            match  = int(match)
+        except(ValueError):
+            print("無効な入力です。")
+        try:
+            val = member[str(key)]
+        except(KeyError):
+            print("見つかりません")
+        val.setMatch(match,svid)
+        val.setWin(win,svid)
+"""
 #---------------------リアクションがついた時の動作----------------------
 @client.event
 async def on_reaction_add(reaction, user):
