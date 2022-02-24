@@ -34,6 +34,9 @@ def column_ser(chr):
         return True
     except MySQLdb._exceptions.OperationalError:
         return False
+#matchのADをリセットする関数。
+def clean_match(svid):
+    cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
 
 #win lose dictを空にする関数
 def clean(svid):
@@ -48,7 +51,7 @@ def regist(name, id, svid):
     if not column_ser(f"{svid}_win"):
         #無かった場合追加する
         cursor.execute(f"ALTER TABLE {table} ADD {svid}_win int NULL, ADD {svid}_match int NULL, ADD {svid}_rate int NULL")
-    
+        cursor.execute(f"ALTER TABLE matching ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")
 
     #その人が登録されているか確認
     cursor.execute(f"SELECT * FROM {table} where userID={id}")
@@ -60,7 +63,7 @@ def regist(name, id, svid):
             for u in cursor:
                 #None（未登録）だったら0を入れて登録する。
                 if u[1] == None:
-                    cursor.execute(f"update {table} set {svid}_win=0, {svid}_match=0, {svid}_rate=0")
+                    cursor.execute(f"update {table} set {svid}_win=0, {svid}_match=0, {svid}_rate=0 where userID={id}")
                     return "サーバーを追加登録しました"
             return "登録済みです"
         break
@@ -139,9 +142,9 @@ async def _slash_score(ctx: SlashContext):
         cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null")
         for i in cursor:
             #勝率を更新する 
-            cursor.execute(f"update {table} set {svid}_rate={svid}_win/{svid}_match where userID={i[1]} and {svid}_match >= 1")
+            cursor.execute(f"update {table} set {svid}_rate={svid}_win/{svid}_match*100 where userID={i[1]} and {svid}_match >= 1")
         
-        cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null")
+        cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null order by {svid}_rate desc")
         #ソートして表示
         x=1
         for i in cursor:
@@ -150,6 +153,58 @@ async def _slash_score(ctx: SlashContext):
     connection.commit()
     await ctx.send(content=msg)
     
+#boombot連携match
+@slash_client.slash(name="match-b", guild_ids=guild_ids)
+async def _slash_matchb(ctx: SlashContext):
+    channel = client.get_channel(ctx.channel.id)
+    svid = int(ctx.guild_id) 
+    content=f""
+    msgList = await channel.history(limit=30).flatten() 
+    for i in msgList:
+        match_result = re.match(r"\*\*Information\*\*", i.content)
+        if match_result:
+            msgID = i.id
+            break
+        else:
+            continue
+
+    try:
+        message = await channel.fetch_message(msgID) 
+    except(UnboundLocalError):
+        await message.channel.send("boombotの情報が読み取れませんでした。/match!b<messeageID>で指定してください。")
+        return
+    #正規表現にてユーザーidを抜き出す
+    clean_match(svid)
+    msg = message.content
+    id_list = re.findall(r'@[\S]{1,18}',msg)
+    x = round(len(id_list)/2)
+    #Attackerに振り分ける処理
+    content += "Attacer:\n"
+    for i in range(x):
+        id = id_list[i]
+        cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
+        for i in cursor:
+            name = str(i[0])
+        cursor.execute(f"insert into matching(A_{svid}) values({id[1:]})")
+        content += str(name) +"\n"
+
+    #Defenderに振り分ける処理
+    content += "Defender:\n"
+    for i in range(x,len(id_list)):
+        id = id_list[i]
+        cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
+        for i in cursor:
+            name = str(i[0])
+        cursor.execute(f"insert into matching(D_{svid}) values({id[1:]})")
+        content += str(name) + "\n"
+    
+        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        connection.commit()
+        msg = await ctx.send(content)
+        await msg.add_reaction(EmojiOK)
+        await msg.add_reaction(EmojiC)
+
+
 
 
 @slash_client.slash(name="hello", guild_ids=guild_ids)
@@ -163,6 +218,60 @@ async def _slash_dbtest(ctx: SlashContext):
     for i in rows:
         await ctx.send(content=str(i))
     
+
+#---------------------リアクションがついた時の動作----------------------
+@client.event
+async def on_reaction_add(reaction, user):
+    global serverList
+    channel = client.get_channel(reaction.message.channel.id)
+    svid = int(reaction.message.guild.id)
+    if user.bot: #botの場合無視する
+        return
+    emoji =  reaction.emoji
+
+    #完了した時の処理
+    if emoji == EmojiOK:
+        content = f"どっちが勝ちましたか?\n Attackerが勝った場合{EmojiW}　負けた場合{EmojiL}を押してください キャンセルは{EmojiC}"
+        msg = await channel.send(content)
+        await msg.add_reaction(EmojiW)
+        await msg.add_reaction(EmojiL)
+        await msg.add_reaction(EmojiC)
+        
+#勝敗登録  
+    if emoji == EmojiW:
+        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
+        A = cursor
+        for i in A:
+            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        
+        cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
+        D = cursor
+        for i in D:
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+
+        connection.commit()
+        await channel.send('Attackerが勝ちとして記録しました。戦績を見る場合は!score')
+    
+    if emoji == EmojiL:
+        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
+        A = cursor
+        for i in A:
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        
+        cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
+        D = cursor
+        for i in D:
+            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        connection.commit()
+        await channel.send("Defenderが勝ちとして記録しました。戦績を見る場合は!score")
+
+
+    if emoji == EmojiC:
+        content = "キャンセルしました　!matchからやり直してください"
+        await channel.send(content)
+        clean_match(svid)
 
 # Botの起動とDiscordサーバーへの接続
 client.run(TOKEN)
