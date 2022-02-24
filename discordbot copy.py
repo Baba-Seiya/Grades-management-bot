@@ -138,10 +138,10 @@ async def _slash_score(ctx: SlashContext):
     if column_ser(f"{svid}_win"):
         cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null")
         for i in cursor:
-            #勝率を更新する
-            cursor.execute(f"update {table} set {svid}_rate={svid}_win/{svid}_match where userID={i[1]}")
+            #勝率を更新する 
+            cursor.execute(f"update {table} set {svid}_rate={svid}_win/{svid}_match where userID={i[1]} and {svid}_match >= 1")
         
-        cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null order by{svid}_rate")
+        cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null")
         #ソートして表示
         x=1
         for i in cursor:
