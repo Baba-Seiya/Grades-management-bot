@@ -273,5 +273,54 @@ async def on_reaction_add(reaction, user):
         await channel.send(content)
         clean_match(svid)
 
+#memo
+"""# ------------------メッセージ受信時に動作する処理------------
+@client.event
+async def on_message(message):
+    global serverList
+    global A
+    global D
+    global ADtable
+    id_list = [] #boombot 連携にて使用　使い方忘れた
+    svid = message.guild.id  #どのサーバーから来たか分かるように定義する。
+    x = 0  #クラス変数が使えな勝ったので選手の数とする,選手の登録で使用
+    channel = client.get_channel(message.channel.id)
+    content=f""
+    #boombot連動!match ID検索
+    if message.content[:8] == "!match-b":
+        if len(message.content) == 26:
+            clean(svid)
+            content = f""
+            message = await channel.fetch_message(int(message.content[8:]))
+    #正規表現にてユーザーidを抜き出す
+    clean_match(svid)
+    msg = message.content
+    id_list = re.findall(r'@[\S]{1,18}',msg)
+    x = round(len(id_list)/2)
+    #Attackerに振り分ける処理
+    content += "Attacer:\n"
+    for i in range(x):
+        id = id_list[i]
+        cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
+        for i in cursor:
+            name = str(i[0])
+        cursor.execute(f"insert into {ADtable}(A_{svid}) values({id[1:]})")
+        content += str(name) +"\n"
+
+    #Defenderに振り分ける処理
+    content += "Defender:\n"
+    for i in range(x,len(id_list)):
+        id = id_list[i]
+        cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
+        for i in cursor:
+            name = str(i[0])
+        cursor.execute(f"insert into {ADtable}(D_{svid}) values({id[1:]})")
+        content += str(name) + "\n"
+    
+        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        connection.commit()
+        msg = await message.channel.send(content)
+        await msg.add_reaction(EmojiOK)
+        await msg.add_reaction(EmojiC)"""
 # Botの起動とDiscordサーバーへの接続
 client.run(TOKEN)
