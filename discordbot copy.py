@@ -10,7 +10,7 @@ from discord_slash import SlashCommand, SlashContext
 # MySQLdbのインポート
 import MySQLdb
 
-guild_ids = [int(config.GUILD_ID1),int(config.GUILD_ID2)] # Put your server ID in this array.
+guild_ids = [int(config.GUILD_ID1),int(config.GUILD_ID2),int(config.GUILD_ID3)] # Put your server ID in this array.
  
 # データベースへの接続とカーソルの生成
 connection = MySQLdb.connect(
@@ -102,7 +102,7 @@ async def on_ready():
     print('ログインしました')
 
 #-------------------プログラムを終了する時に必要な動作------------------
-@slash_client.slash(name="exit", guild_ids=guild_ids)
+@slash_client.slash(name="exit",description="botの終了。このコマンドまじで意味ないしリスクでしかない。なんなん？", guild_ids=guild_ids)
 async def _slash_exit(ctx: SlashContext):
     await ctx.send(content="bye")
     # 保存を実行
@@ -115,7 +115,7 @@ async def _slash_exit(ctx: SlashContext):
 
 # ------------------スラッシュコマンドにより動作する処理------------
 #選手の登録
-@slash_client.slash(name="regist", guild_ids=guild_ids)
+@slash_client.slash(name="regist",description="選手の登録。戦績を記録をしたい人はまずこのコマンドを打ってください", guild_ids=guild_ids)
 async def _slash_regist(ctx: SlashContext):
     name = str(ctx.author)
     id = int(ctx.author_id)
@@ -124,7 +124,7 @@ async def _slash_regist(ctx: SlashContext):
     connection.commit()
     await ctx.send(content=str(ans))
 
-@slash_client.slash(name="regist_test", guild_ids=guild_ids)
+@slash_client.slash(name="regist_test",description="なんで作ったかわからん何が起きるの？",guild_ids=guild_ids)
 async def _slash_regist_test(ctx: SlashContext):
     name = "testman"
     id = 1234567890
@@ -134,7 +134,7 @@ async def _slash_regist_test(ctx: SlashContext):
     await ctx.send(content=str(ans))
 
 #戦績の表示
-@slash_client.slash(name="score", guild_ids=guild_ids)
+@slash_client.slash(name="score",description="戦績の一覧を表示します。勝ち負け数関係なく勝率でソートしてます。", guild_ids=guild_ids)
 async def _slash_score(ctx: SlashContext):
     svid = int(ctx.guild_id)
     msg = ""
@@ -154,7 +154,7 @@ async def _slash_score(ctx: SlashContext):
     await ctx.send(content=msg)
     
 #boombot連携match
-@slash_client.slash(name="match-b", guild_ids=guild_ids)
+@slash_client.slash(name="match-b",description="boombotを使用して登録します。v.teamを打ったチャンネルで使用してください。技術力無くて最新のv.teamしか読み取れません。ごめんって", guild_ids=guild_ids)
 async def _slash_matchb(ctx: SlashContext):
     channel = client.get_channel(ctx.channel.id)
     svid = int(ctx.guild_id) 
@@ -207,11 +207,11 @@ async def _slash_matchb(ctx: SlashContext):
 
 
 
-@slash_client.slash(name="hello", guild_ids=guild_ids)
+@slash_client.slash(name="hello",description="デバックで使った奴。ハロー！", guild_ids=guild_ids)
 async def _slash_hello(ctx: SlashContext):
     await ctx.send(content="Hello!")
 
-@slash_client.slash(name="dbtest", guild_ids=guild_ids)
+@slash_client.slash(name="dbtest",description="デバックで使った奴。", guild_ids=guild_ids)
 async def _slash_dbtest(ctx: SlashContext):
     cursor.execute(f"SELECT * FROM {table}")
     rows = cursor.fetchall()
