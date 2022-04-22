@@ -225,6 +225,51 @@ async def on_message(ctx):
         msg = await ctx.channel.send(content)
         await msg.add_reaction(EmojiOK)
         await msg.add_reaction(EmojiC) 
+        return
+
+    #boombot連動!match ID検索
+    if ctx.content[:8] == "!match-b":
+        channel = client.get_channel(ctx.channel.id)
+        svid = int(ctx.guild.id) 
+        content=f""
+        if len(ctx.content) == 26:
+            clean_match(svid)
+            content = f""
+            ctx = await channel.fetch_message(int(ctx.content[8:]))
+
+            #正規表現にてユーザーidを抜き出す
+            msg = ctx.content
+            id_list = re.findall(r'@[\S]{1,18}',msg)
+            x = round(len(id_list)/2)
+
+        #Attackerに振り分ける処理
+        content += "Attacer:\n"
+        for i in range(x):
+            id = id_list[i]
+            ans = server_serch(svid,id[1:])
+            if ans[0]:
+                #最終結果からmatchingテーブルを編集する。
+                cursor.execute(f"insert into matching(A_{svid}) values({id[1:]})")
+                content += str(ans[1]) +"\n"
+                continue
+            content += str(ans[1]) + "\n"
+        #Defenderに振り分ける処理
+        content += "Defender:\n"
+        for i in range(x,len(id_list)):
+            id = id_list[i]
+            ans = server_serch(svid,id[1:])
+            if ans[0]:
+                #最終結果からmatchingテーブルを編集する。
+                cursor.execute(f"insert into matching(D_{svid}) values({id[1:]})")
+                content += str(ans[1]) + "\n"
+                continue
+            content += str(ans[1]) + "\n"
+
+        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        connection.commit()
+        msg = await ctx.channel.send(content)
+        await msg.add_reaction(EmojiOK)
+        await msg.add_reaction(EmojiC) 
     #help
     if ctx.content == "!help":
         content="""１．選手登録を行う
