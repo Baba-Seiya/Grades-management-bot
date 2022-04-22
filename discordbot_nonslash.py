@@ -1,4 +1,5 @@
 # インストールした discord.py を読み込む
+from unicodedata import name
 import discord
 import pickle
 import asyncio
@@ -28,7 +29,7 @@ client = discord.Client(intents=discord.Intents.all())
 slash_client = SlashCommand(client,sync_commands=True)
 #--------------------------------------------定義関数--------------------------------------------
 #db関連の関数
-def column_ser(chr):
+def column_ser(chr): #カラムがあればT無ければFを返す関数。
     try:
         cursor.execute(f"SELECT * FROM {table} where {chr}")
         return True
@@ -73,6 +74,32 @@ def regist(name, id, svid):
         return "ユーザを登録をしました"
 
     return "登録済みです"
+
+#サーバーにその人の登録があるか確認する関数。(戻り値[結果TorF,人物名orエラー内容])
+def server_serch(svid,id):
+    #サーバーが登録されているか確認
+    if not column_ser(f"{svid}_win"):
+        #無かったらエラーを返す
+        return [False,"サーバーが登録されていません。"]
+    lis = []
+    #そのidがbotに登録されているか確認する
+    cursor.execute(f"SELECT * FROM {table} where userID={id}")
+    lis = cursor.fetchall()
+    if not lis:
+        return [False,"ユーザー登録がされていません。"]
+
+    #そのidがサーバーが登録されているか確認する。
+    lis = []
+    cursor.execute(f"SELECT userID, {svid}_win FROM {table} where userID={id}")
+    lis = cursor.fetchall()
+    if lis[0][1] == None:
+        return [False,"このサーバーに登録がありません。"]
+
+    cursor.execute(f"SELECT * FROM {table} where userID={id}")
+    for i in cursor:
+        name = i[0]
+
+    return [True,name]
 
 
 
@@ -153,7 +180,7 @@ async def on_message(ctx):
         content=f""
         msgList = await channel.history(limit=30).flatten() 
         for i in msgList:
-            match_result = re.match(r"\*\*Information\*\*", i.content)
+            match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
             if match_result:
                 msgID = i.id
                 break
@@ -163,7 +190,7 @@ async def on_message(ctx):
         try:
             message = await channel.fetch_message(msgID) 
         except(UnboundLocalError):
-            await message.channel.send("boombotの情報が読み取れませんでした。/match!b<messeageID>で指定してください。")
+            await ctx.channel.send("boombotの情報が読み取れませんでした。/match!b<messeageID>で指定してください。")
             return
         #正規表現にてユーザーidを抜き出す
         clean_match(svid)
@@ -174,27 +201,30 @@ async def on_message(ctx):
         content += "Attacer:\n"
         for i in range(x):
             id = id_list[i]
-            cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
-            for i in cursor:
-                name = str(i[0])
-            cursor.execute(f"insert into matching(A_{svid}) values({id[1:]})")
-            content += str(name) +"\n"
-
+            ans = server_serch(svid,id[1:])
+            if ans[0]:
+                #最終結果からmatchingテーブルを編集する。
+                cursor.execute(f"insert into matching(A_{svid}) values({id[1:]})")
+                content += str(ans[1]) +"\n"
+                continue
+            content += str(ans[1]) + "\n"
         #Defenderに振り分ける処理
         content += "Defender:\n"
         for i in range(x,len(id_list)):
             id = id_list[i]
-            cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
-            for i in cursor:
-                name = str(i[0])
-            cursor.execute(f"insert into matching(D_{svid}) values({id[1:]})")
-            content += str(name) + "\n"
-        
-            content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
-            connection.commit()
-            msg = await ctx.channel.send(content)
-            await msg.add_reaction(EmojiOK)
-            await msg.add_reaction(EmojiC)  
+            ans = server_serch(svid,id[1:])
+            if ans[0]:
+                #最終結果からmatchingテーブルを編集する。
+                cursor.execute(f"insert into matching(D_{svid}) values({id[1:]})")
+                content += str(ans[1]) + "\n"
+                continue
+            content += str(ans[1]) + "\n"
+
+        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        connection.commit()
+        msg = await ctx.channel.send(content)
+        await msg.add_reaction(EmojiOK)
+        await msg.add_reaction(EmojiC) 
     #help
     if ctx.content == "!help":
         content="""１．選手登録を行う
@@ -235,9 +265,10 @@ async def on_reaction_add(reaction, user):
         
 #勝敗登録  
     if emoji == EmojiW:
-        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
+        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")#matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
         A = cursor
         for i in A:
+            #PlayerManagaerの更新
             cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
         
