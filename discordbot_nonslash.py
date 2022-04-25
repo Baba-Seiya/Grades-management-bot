@@ -1,10 +1,10 @@
 # インストールした discord.py を読み込む
-from unicodedata import name
 import discord
 import pickle
 import asyncio
 import re
 from pyrsistent import b
+from slacker import Reactions
 import config
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
@@ -35,9 +35,19 @@ def column_ser(chr): #カラムがあればT無ければFを返す関数。
         return True
     except MySQLdb._exceptions.OperationalError:
         return False
+
+#db関連の関数
+def column_ser_react(chr): #カラムがあればT無ければFを返す関数。
+    try:
+        cursor.execute(f"SELECT * FROM react where {chr}")
+        return True
+    except MySQLdb._exceptions.OperationalError:
+        return False
+
 #matchのADをリセットする関数。
 def clean_match(svid):
     cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
+    cursor.execute(f"delete from react where A_{svid} or D_{svid}")
 
 #win lose dictを空にする関数
 def clean(svid):
@@ -192,6 +202,7 @@ async def on_message(ctx):
         except(UnboundLocalError):
             await ctx.channel.send("boombotの情報が読み取れませんでした。/match!b<messeageID>で指定してください。")
             return
+        
         #正規表現にてユーザーidを抜き出す
         clean_match(svid)
         msg = message.content
@@ -208,6 +219,7 @@ async def on_message(ctx):
                 content += str(ans[1]) +"\n"
                 continue
             content += str(ans[1]) + "\n"
+
         #Defenderに振り分ける処理
         content += "Defender:\n"
         for i in range(x,len(id_list)):
@@ -270,6 +282,38 @@ async def on_message(ctx):
         msg = await ctx.channel.send(content)
         await msg.add_reaction(EmojiOK)
         await msg.add_reaction(EmojiC) 
+    
+    #戦績の記録（手動メンションタイプ）
+    if ctx.content == "!match":
+        svid = int(ctx.guild.id)
+        #サーバーが登録されているか確認
+        if not column_ser_react(f"A_{svid}"):
+            #無かった場合追加する
+            cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")  
+        content = f"{EmojiA} = Attacker   {EmojiD} = Defender を選択して、完了したら{EmojiOK}を押してください。キャンセルは{EmojiC}"
+        msg = await ctx.channel.send(content)
+
+        await msg.add_reaction(EmojiA)
+        await msg.add_reaction(EmojiD)
+        await msg.add_reaction(EmojiOK)
+        await msg.add_reaction(EmojiC)
+        clean_match(svid)
+
+    #!call<messageid>emoji　で指定したリアクションの人を呼ぶ。
+    if ctx.content[:5] == "!call":
+        emoji = ctx.content[23:]
+        channel = client.get_channel(ctx.channel.id)
+        if len(ctx.content) > 17:
+            ctx = await channel.fetch_message(int(ctx.content[5:23]))
+            reaction = ctx.reactions
+            await channel.send(f"集合\n")
+            for i in reaction:
+                if i.emoji == emoji:
+                    async for user in i.users():
+                        if user.bot :
+                            continue
+                        await channel.send(f"{user.mention}\n")
+
     #help
     if ctx.content == "!help":
         content="""１．選手登録を行う
@@ -277,12 +321,12 @@ async def on_message(ctx):
 !regist　と入力すると自動で入力した選手が登録されます
 
 NEW!サーバー別に記録できるようになりましたNEW!
-サーバー別に記録するようになったので別サーバーにて使用する際は/registをしてください。
+サーバー別に記録するようになったので別サーバーにて使用する際は!registをしてください。
 ○○を追加登録しました！　と表示されたらサーバー別登録完了です。
 
 ２.試合結果の登録(boom bot連動タイプ)
 注意！（入力したテキストチャンネルチャンネルid とboom bot が同じテキストチャンネルにメッセージがある必要があります）
-!match-b と入力するとboom botの最新のv.teamの結果を参照してAttackerとDefenderを振り分けてくれます。
+!match-b と入力するとboom botの最新の/valo teamの結果を参照してAttackerとDefenderを振り分けてくれます。
 振り分けが正しければOKリアクションをしてください。
 後は言われた通りやってください。
 
@@ -294,11 +338,33 @@ NEW!サーバー別に記録できるようになりましたNEW!
 @client.event
 async def on_reaction_add(reaction, user):
     global serverList
+    userid = int(user.id)
     channel = client.get_channel(reaction.message.channel.id)
     svid = int(reaction.message.guild.id)
     if user.bot: #botの場合無視する
         return
     emoji =  reaction.emoji
+
+    #選手の振り分け  (リアクションタイプ)
+    #Attackerへの振り分け
+    if emoji == EmojiA:
+        #サーバーが登録されているか確認
+        if not column_ser_react(f"A_{svid}"):
+            #無かった場合追加する
+            cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")
+
+        #reactテーブルのA_svidに追加する。
+        cursor.execute(f"INSERT INTO react (A_{svid}) values({userid})")
+
+    #Defenderへの振り分け
+    if emoji == EmojiD:
+                #サーバーが登録されているか確認
+        if not column_ser_react(f"A_{svid}"):
+            #無かった場合追加する
+            cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")
+        #reactテーブルのA_svidに追加する。
+        cursor.execute(f"INSERT INTO react (D_{svid}) values({userid})")
+
 
     #完了した時の処理
     if emoji == EmojiOK:
@@ -309,90 +375,90 @@ async def on_reaction_add(reaction, user):
         await msg.add_reaction(EmojiC)
         
 #勝敗登録  
-    if emoji == EmojiW:
-        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")#matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+    #勝った時
+    if emoji == EmojiW: 
+        #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
+        A = cursor
+        for i in A:
+            #PlayerManagaerの更新
+            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+
+        #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+        cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
         A = cursor
         for i in A:
             #PlayerManagaerの更新
             cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
         
+        
+        #match-bの時の登録処理
         cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
+        D = cursor
+        for i in D:
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+
+        #reactionタイプの時の登録処理
+        cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
         D = cursor
         for i in D:
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         connection.commit()
         await channel.send('Attackerが勝ちとして記録しました。戦績を見る場合は!score')
+        clean_match(svid)
     
+    #負けた時
     if emoji == EmojiL:
+        #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
         cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
         A = cursor
         for i in A:
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
-        
+
+        #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+        cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
+        A = cursor
+        for i in A:
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+
+        #match-bの時の登録処理
         cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
         D = cursor
         for i in D:
             cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+
+        #reactの時の登録処理
+        cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
+        D = cursor
+        for i in D:
+            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+
+
         connection.commit()
         await channel.send("Defenderが勝ちとして記録しました。戦績を見る場合は!score")
-
+        clean_match(svid)
 
     if emoji == EmojiC:
         content = "キャンセルしました　!matchからやり直してください"
         await channel.send(content)
         clean_match(svid)
-
-#memo
-"""# ------------------メッセージ受信時に動作する処理------------
-@client.event
-async def on_message(message):
-    global serverList
-    global A
-    global D
-    global ADtable
-    id_list = [] #boombot 連携にて使用　使い方忘れた
-    svid = message.guild.id  #どのサーバーから来たか分かるように定義する。
-    x = 0  #クラス変数が使えな勝ったので選手の数とする,選手の登録で使用
-    channel = client.get_channel(message.channel.id)
-    content=f""
-    #boombot連動!match ID検索
-    if message.content[:8] == "!match-b":
-        if len(message.content) == 26:
-            clean(svid)
-            content = f""
-            message = await channel.fetch_message(int(message.content[8:]))
-    #正規表現にてユーザーidを抜き出す
-    clean_match(svid)
-    msg = message.content
-    id_list = re.findall(r'@[\S]{1,18}',msg)
-    x = round(len(id_list)/2)
-    #Attackerに振り分ける処理
-    content += "Attacer:\n"
-    for i in range(x):
-        id = id_list[i]
-        cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
-        for i in cursor:
-            name = str(i[0])
-        cursor.execute(f"insert into {ADtable}(A_{svid}) values({id[1:]})")
-        content += str(name) +"\n"
-
-    #Defenderに振り分ける処理
-    content += "Defender:\n"
-    for i in range(x,len(id_list)):
-        id = id_list[i]
-        cursor.execute(f"SELECT userName, userID FROM {table} where userID={id[1:]}")
-        for i in cursor:
-            name = str(i[0])
-        cursor.execute(f"insert into {ADtable}(D_{svid}) values({id[1:]})")
-        content += str(name) + "\n"
     
-        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
-        connection.commit()
-        msg = await message.channel.send(content)
-        await msg.add_reaction(EmojiOK)
-        await msg.add_reaction(EmojiC)"""
+#特定のリアクションが消えた時に動くやつ。
+@client.event
+async def on_reaction_remove(reaction, user):
+    userid =int(user.id)
+    svid = int(reaction.message.guild.id)
+    if reaction == EmojiA:
+        #reactテーブルのA_svidの人を削除する
+        cursor.execute(f"DELETE FROM react where A_{svid} = {userid}")
+    if reaction == EmojiD:
+        #reactテーブルのD_svidの人を削除する
+        cursor.execute(f"DELETE FROM react where D_{svid} = {userid}")
+
 # Botの起動とDiscordサーバーへの接続
 client.run(TOKEN)
