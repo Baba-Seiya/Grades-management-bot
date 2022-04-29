@@ -160,14 +160,17 @@ async def on_message(ctx):
         name = str(ctx.author)
         id = int(ctx.author.id)
         svid =int(ctx.guild.id) 
-        ans = regist(name,id,svid)
+        ans = str(regist(name,id,svid))
         connection.commit()
-        await ctx.channel.send(content=str(ans))
+        embed = discord.Embed(title="**選手の登録**",color=discord.Colour.green())
+        embed.add_field(name="現在の状態", value=ans, inline=False)
+        embed.set_thumbnail(url=str(ctx.author.avatar_url))
+        await ctx.channel.send(embed=embed)
 
     #戦績の表示
     if ctx.content == "!score":
         svid = int(ctx.guild.id)
-        msg = ""
+        msg = "```"
         if column_ser(f"{svid}_win"):
             cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null")
             for i in cursor:
@@ -181,16 +184,20 @@ async def on_message(ctx):
                 msg += f"{x}. {i[0]} 勝率:{i[4]}% 勝ち数:{i[2]} 試合回数:{i[3]}\n"
                 x += 1 
         connection.commit()
-        await ctx.channel.send(content=msg)
+        msg += "```"
+        embed = discord.Embed(title="**戦績の表示**",description=msg,color=discord.Colour.orange())
+
+        await ctx.channel.send(embed=embed)
         
     #boombot連携match
     if ctx.content == "!match-b":
         channel = client.get_channel(ctx.channel.id)
         svid = int(ctx.guild.id) 
         content=f""
+        #メッセージを読みだす
         msgList = await channel.history(limit=30).flatten() 
         for i in msgList:
-            match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
+            match_result = re.match(r"\*\*Information\*\*", i.content)
             if match_result:
                 msgID = i.id
                 break
@@ -200,7 +207,9 @@ async def on_message(ctx):
         try:
             message = await channel.fetch_message(msgID) 
         except(UnboundLocalError):
-            await ctx.channel.send("boombotの情報が読み取れませんでした。/match!b<messeageID>で指定してください。")
+            msg="boombotの情報が読み取れませんでした。/match-b<messeageID>で指定してください。"
+            embed = discord.Embed(title="**エラー**",description=msg,color=discord.Colour.red())
+            await ctx.channel.send(embed=embed)
             return
         
         #正規表現にてユーザーidを抜き出す
@@ -232,9 +241,13 @@ async def on_message(ctx):
                 continue
             content += str(ans[1]) + "\n"
 
-        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        mes = f"正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
         connection.commit()
-        msg = await ctx.channel.send(content)
+
+        embed = discord.Embed(title="選手の振り分け",description=content,color=discord.Colour.orange())
+        embed.add_field(name="この内容でよろしいですか？",value=mes)
+
+        msg = await ctx.channel.send(embed=embed)
         await msg.add_reaction(EmojiOK)
         await msg.add_reaction(EmojiC) 
         return
@@ -255,7 +268,7 @@ async def on_message(ctx):
             x = round(len(id_list)/2)
 
         #Attackerに振り分ける処理
-        content += "Attacer:\n"
+        content += "**Attacker:**\n"
         for i in range(x):
             id = id_list[i]
             ans = server_serch(svid,id[1:])
@@ -266,7 +279,7 @@ async def on_message(ctx):
                 continue
             content += str(ans[1]) + "\n"
         #Defenderに振り分ける処理
-        content += "Defender:\n"
+        content += "**Defender:**\n"
         for i in range(x,len(id_list)):
             id = id_list[i]
             ans = server_serch(svid,id[1:])
@@ -277,9 +290,13 @@ async def on_message(ctx):
                 continue
             content += str(ans[1]) + "\n"
 
-        content += f"この内容で正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
+        content += f"この内容で正しければ{EmojiOK} キャンセルする場合は{EmojiC}を押してください"
         connection.commit()
-        msg = await ctx.channel.send(content)
+
+        embed = discord.Embed(title="選手の振り分け",description=content,color=discord.Colour.orange())
+        embed.add_field(name="この内容でよろしいですか？",value=mes)
+
+        msg = await ctx.channel.send(embed=embed)
         await msg.add_reaction(EmojiOK)
         await msg.add_reaction(EmojiC) 
     
@@ -291,7 +308,8 @@ async def on_message(ctx):
             #無かった場合追加する
             cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")  
         content = f"{EmojiA} = Attacker   {EmojiD} = Defender を選択して、完了したら{EmojiOK}を押してください。キャンセルは{EmojiC}"
-        msg = await ctx.channel.send(content)
+        embed = discord.Embed(title="**match**",description=content,color=discord.Colour.orange())
+        msg = await ctx.channel.send(embed=embed)
 
         await msg.add_reaction(EmojiA)
         await msg.add_reaction(EmojiD)
@@ -306,13 +324,17 @@ async def on_message(ctx):
         if len(ctx.content) > 17:
             ctx = await channel.fetch_message(int(ctx.content[5:23]))
             reaction = ctx.reactions
-            await channel.send(f"集合\n")
+            msg =f"集合\n"
+            #await channel.send(f"集合\n")
             for i in reaction:
                 if i.emoji == emoji:
                     async for user in i.users():
                         if user.bot :
                             continue
-                        await channel.send(f"{user.mention}\n")
+                        msg += f"<@{int(user.id)}>\n"
+                        #await channel.send(f"{user.mention}\n")
+            embed = discord.Embed(title="**呼び出し**",description=msg,color=discord.Colour.blue())
+            await channel.send(embed=embed)
 
     #help
     if ctx.content == "!help":
@@ -337,7 +359,34 @@ NEW!サーバー別に記録できるようになりましたNEW!
 時間にルーズなゲーマーが多いため仕方なく実装しました。
 !call<messegeid><メッセージについてる絵文字>（例）/call!968048735617695744🐑
 ↑を使用するとそのメッセージについてる指定したリアクションに反応した人を一斉メンション出来ます。"""
-        await ctx.channel.send(content)
+        embed = discord.Embed(title="**Grades management bot help v.1.8.4**",color=discord.Colour.orange(),)
+        embed.add_field(
+            name="１．選手登録を行う",
+            value="""`!regist`
+            ```記録する選手はまず選手登録が必要になります。!registと入力すると自動で入力した選手が登録されます```"""
+            ,inline=False)
+        embed.add_field(
+            name="NEW!サーバー別に記録できるようになりましたNEW!",
+            value="```サーバー別に記録するようになったので別サーバーにて使用する際は!registをしてください。○○を追加登録しました！と表示されたらサーバー別登録完了です。```",
+            inline=False)
+        embed.add_field(
+            name="２.試合結果の登録(boom bot連動タイプ)",
+            value="""`!match-b`
+            ```!match-bと入力するとboom botの最新の./valo teamの結果を参照してAttackerとDefenderを振り分けてくれます。振り分けが正しければOKリアクションをしてください。後は言われた通りやってください。(!match-b‹messege id›でメッセージIDを指定することも可能)``````注意！（入力したテキストチャンネルチャンネルid とboom bot が同じテキストチャンネルにメッセージがある必要があります）```""",
+            inline=False)
+        embed.add_field(
+            name="３．試合結果の表示",
+            value="""`!score`
+            ```!scoreと入力すると勝率順でソートした個人別成績が表示されます。```""",
+            inline=False)
+        embed.add_field(
+            name="NEW!! メッセージ、リアクション指定で一括メンション機能実装！！！",
+            value="""`!call`
+            ```時間にルーズなゲーマーが多いため仕方なく実装しました。
+!call<messegeid><メッセージについてる絵文字>（例）/call!968048735617695744🐑
+↑を使用するとそのメッセージについてる指定したリアクションに反応した人を一斉メンション出来ます。```""",
+            inline=False)
+        await ctx.channel.send(embed=embed)
 
 #---------------------リアクションがついた時の動作----------------------
 @client.event
@@ -373,8 +422,9 @@ async def on_reaction_add(reaction, user):
 
     #完了した時の処理
     if emoji == EmojiOK:
-        content = f"どっちが勝ちましたか?\n Attackerが勝った場合{EmojiW}　負けた場合{EmojiL}を押してください キャンセルは{EmojiC}"
-        msg = await channel.send(content)
+        content = f"どっちが勝ちましたか?\n Attackerが勝った場合{EmojiW} 負けた場合{EmojiL}を押してください キャンセルは{EmojiC}"
+        embed = discord.Embed(title="**勝敗登録**",description=content,color=discord.Colour.orange())
+        msg = await channel.send(embed=embed)
         await msg.add_reaction(EmojiW)
         await msg.add_reaction(EmojiL)
         await msg.add_reaction(EmojiC)
@@ -412,7 +462,8 @@ async def on_reaction_add(reaction, user):
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         connection.commit()
-        await channel.send('Attackerが勝ちとして記録しました。戦績を見る場合は!score')
+        embed = discord.Embed(title="**勝敗結果**",description='Attackerが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
+        await channel.send(embed=embed)
         clean_match(svid)
     
     #負けた時
@@ -445,12 +496,14 @@ async def on_reaction_add(reaction, user):
 
 
         connection.commit()
-        await channel.send("Defenderが勝ちとして記録しました。戦績を見る場合は!score")
+        embed = discord.Embed(title="**勝敗結果**",description='Defenderが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
+        await channel.send(embed=embed)
         clean_match(svid)
 
     if emoji == EmojiC:
         content = "キャンセルしました　!matchからやり直してください"
-        await channel.send(content)
+        embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())
+        await channel.send(embed=embed)
         clean_match(svid)
     
 #特定のリアクションが消えた時に動くやつ。
