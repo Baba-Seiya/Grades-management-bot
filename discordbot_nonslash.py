@@ -1,6 +1,5 @@
 # インストールした discord.py を読み込む
 import discord
-import pickle
 import asyncio
 import re
 from pyrsistent import b
@@ -47,7 +46,7 @@ def column_ser_react(chr): #カラムがあればT無ければFを返す関数�
 #matchのADをリセットする関数。
 def clean_match(svid):
     cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
-    cursor.execute(f"delete from react where A_{svid} or D_{svid}")
+    #cursor.execute(f"delete from react where A_{svid} or D_{svid}")
 
 #win lose dictを空にする関数
 def clean(svid):
@@ -290,7 +289,7 @@ async def on_message(ctx):
                 continue
             content += str(ans[1]) + "\n"
 
-        content += f"この内容で正しければ{EmojiOK} キャンセルする場合は{EmojiC}を押してください"
+        mes = f"この内容で正しければ{EmojiOK} キャンセルする場合は{EmojiC}を押してください"
         connection.commit()
 
         embed = discord.Embed(title="選手の振り分け",description=content,color=discord.Colour.orange())
@@ -441,9 +440,9 @@ async def on_reaction_add(reaction, user):
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
-        cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
-        A = cursor
-        for i in A:
+        #cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
+        #A = cursor
+        #for i in A:
             #PlayerManagaerの更新
             cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
@@ -456,10 +455,10 @@ async def on_reaction_add(reaction, user):
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         #reactionタイプの時の登録処理
-        cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
-        D = cursor
-        for i in D:
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        #cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
+        #D = cursor
+        #for i in D:
+        #    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         connection.commit()
         embed = discord.Embed(title="**勝敗結果**",description='Attackerが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
@@ -475,10 +474,10 @@ async def on_reaction_add(reaction, user):
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
-        cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
-        A = cursor
-        for i in A:
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        #cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
+        #A = cursor
+        #for i in A:
+        #    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         #match-bの時の登録処理
         cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
@@ -488,11 +487,11 @@ async def on_reaction_add(reaction, user):
             cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
         #reactの時の登録処理
-        cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
-        D = cursor
-        for i in D:
-            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        #cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
+        #D = cursor
+        #for i in D:
+        #    cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+        #    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
 
 
         connection.commit()
