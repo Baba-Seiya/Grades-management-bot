@@ -45,8 +45,11 @@ def column_ser_react(chr): #カラムがあればT無ければFを返す関数�
 
 #matchのADをリセットする関数。
 def clean_match(svid):
-    cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
-    #cursor.execute(f"delete from react where A_{svid} or D_{svid}")
+    try:
+        cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
+        cursor.execute(f"delete from react where A_{svid} or D_{svid}")
+    except:
+        pass
 
 #win lose dictを空にする関数
 def clean(svid):
@@ -109,7 +112,6 @@ def server_serch(svid,id):
         name = i[0]
 
     return [True,name]
-
 
 
 #--------------------------変数置き場-------------------------
@@ -394,6 +396,8 @@ async def on_reaction_add(reaction, user):
     userid = int(user.id)
     channel = client.get_channel(reaction.message.channel.id)
     svid = int(reaction.message.guild.id)
+    reactions = reaction.message.reactions
+
     if user.bot: #botの場合無視する
         return
     emoji =  reaction.emoji
@@ -431,35 +435,59 @@ async def on_reaction_add(reaction, user):
 #勝敗登録  
     #勝った時
     if emoji == EmojiW: 
-        #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
-        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
-        A = cursor
-        for i in A:
-            #PlayerManagaerの更新
-            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        #リアクションタイプかそうでないかを判別するフラグ
+        reactflag = False
 
-        #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
-        #cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
-        #A = cursor
-        #for i in A:
-            #PlayerManagaerの更新
-            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
-        
-        
+        #リアクションの中にリアクションタイプで使用する絵文字があったらフラグを立てる
+        for i in reactions:
+            if i.emoji == EmojiA or EmojiD:
+                reactflag = True
+
+        #if 内はリアクションタイプの時(A側の登録処理)
+        if reactflag : 
+            #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+            cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
+            A = cursor
+            for i in A:
+                #PlayerManagaerの更新
+                try:
+                    cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+                    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                except:
+                    content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
+                    embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
+                    await channel.send(embed=embed)
+                    return
+
+            #D側の登録処理
+            cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
+            D = cursor
+            for i in D:
+                cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+       
         #match-bの時の登録処理
-        cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
-        D = cursor
-        for i in D:
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        else:
+            #match-bの時の登録処理
+            #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+            cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
+            A = cursor
+            for i in A:
+                #PlayerManagaerの更新
+                try:
+                    cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+                    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                except:
+                    content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
+                    embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
+                    await channel.send(embed=embed)
+                    return
 
-        #reactionタイプの時の登録処理
-        #cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
-        #D = cursor
-        #for i in D:
-        #    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
-
+            #D側の登録処理
+            cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
+            D = cursor
+            for i in D:
+                cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        
         connection.commit()
         embed = discord.Embed(title="**勝敗結果**",description='Attackerが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
         await channel.send(embed=embed)
@@ -467,35 +495,61 @@ async def on_reaction_add(reaction, user):
     
     #負けた時
     if emoji == EmojiL:
-        #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
-        cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
-        A = cursor
-        for i in A:
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        #リアクションタイプかそうでないかを判別するフラグ
+        reactflag = False
 
-        #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
-        #cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
-        #A = cursor
-        #for i in A:
-        #    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        #リアクションの中にリアクションタイプで使用する絵文字があったらフラグを立てる
+        for i in reactions:
+            if i.emoji == EmojiA or EmojiD:
+                reactflag = True
+
+        #if 内はリアクションタイプの時(A側の登録処理)
+        if reactflag : 
+            #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+            cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
+            A = cursor
+            for i in A:
+                #PlayerManagaerの更新
+                try:
+                    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                except:
+                    content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
+                    embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
+                    await channel.send(embed=embed)
+                    return                
+            #D側の登録処理
+            cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
+            D = cursor
+            for i in D:
+                cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+                cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+
 
         #match-bの時の登録処理
-        cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
-        D = cursor
-        for i in D:
-            cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
-            cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        else:
+            #match-bの時の登録処理
+            #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
+            cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
+            A = cursor
+            for i in A:
+                #PlayerManagaerの更新
+                try:
+                    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                except:
+                    content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
+                    embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
+                    await channel.send(embed=embed)
+                    return
 
-        #reactの時の登録処理
-        #cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
-        #D = cursor
-        #for i in D:
-        #    cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
-        #    cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
-
-
+            #D側の登録処理
+            cursor.execute(f"select D_{svid} from matching where D_{svid} is not null")
+            D = cursor
+            for i in D:
+                cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
+                cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+        
         connection.commit()
-        embed = discord.Embed(title="**勝敗結果**",description='Defenderが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
+        embed = discord.Embed(title="**勝敗結果**",description='Attackerが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
         await channel.send(embed=embed)
         clean_match(svid)
 
