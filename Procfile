@@ -1,1 +1,1 @@
-pbot: python3 discordbot_nonslash.py
+pbot: python3 discordbot_nonslash_heroku.py
