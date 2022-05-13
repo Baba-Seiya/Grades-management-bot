@@ -50,6 +50,7 @@ def clean_match(svid):
         cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
         cursor.execute(f"delete from react where A_{svid} or D_{svid}")
         connection.commit()
+        connection.close()
     except:
         pass
 
@@ -80,6 +81,7 @@ def regist(name, id, svid):
                 if u[1] == None:
                     cursor.execute(f"update {table} set {svid}_win=0, {svid}_match=0, {svid}_rate=0 where userID={id}")
                     connection.commit()
+                    connection.close()
                     return "サーバーを追加登録しました"
             return "登録済みです"
         break
@@ -87,8 +89,10 @@ def regist(name, id, svid):
         #見つからなかったらその人とサーバーを登録する
         cursor.execute(f"insert into {table}(userName,userID,{svid}_win,{svid}_match,{svid}_rate) values(\"{name}\",{id},0,0,0)")
         connection.commit()
+        connection.close()
         return "ユーザを登録をしました"
-
+    
+    connection.close()
     return "登録済みです"
 
 #サーバーにその人の登録があるか確認する関数。(戻り値[結果TorF,人物名orエラー内容])
@@ -97,6 +101,7 @@ def server_serch(svid,id):
     if not column_ser(f"{svid}_win"):
         #無かったらエラーを返す
         connection.commit()
+        connection.close()
         return [False,"サーバーが登録されていません。"]
     lis = []
     #そのidがbotに登録されているか確認する
@@ -104,6 +109,7 @@ def server_serch(svid,id):
     lis = cursor.fetchall()
     if not lis:
         connection.commit()
+        connection.close()
         return [False,"ユーザー登録がされていません。"]
 
     #そのidがサーバーが登録されているか確認する。
@@ -112,6 +118,7 @@ def server_serch(svid,id):
     lis = cursor.fetchall()
     if lis[0][1] == None:
         connection.commit()
+        connection.close()
         return [False,"このサーバーに登録がありません。"]
 
     cursor.execute(f"SELECT * FROM {table} where userID={id}")
@@ -119,6 +126,7 @@ def server_serch(svid,id):
         name = i[0]
 
     connection.commit()
+    connection.close()
     return [True,name]
 
 
@@ -171,6 +179,7 @@ async def on_message(ctx):
         svid =int(ctx.guild.id) 
         ans = str(regist(name,id,svid))
         connection.commit()
+        connection.close()
         embed = discord.Embed(title="**選手の登録**",color=discord.Colour.green())
         embed.add_field(name="現在の状態", value=ans, inline=False)
         embed.set_thumbnail(url=str(ctx.author.avatar_url))
@@ -193,6 +202,7 @@ async def on_message(ctx):
                 msg += f"{x}. {i[0]} 勝率:{i[4]}% 勝ち数:{i[2]} 試合回数:{i[3]}\n"
                 x += 1 
         connection.commit()
+        connection.close()
         msg += "```"
         embed = discord.Embed(title="**戦績の表示**",description=msg,color=discord.Colour.orange())
 
@@ -252,6 +262,7 @@ async def on_message(ctx):
 
         mes = f"正しければ{EmojiOK}キャンセルする場合は{EmojiC}を押してください"
         connection.commit()
+        connection.close()
 
         embed = discord.Embed(title="選手の振り分け",description=content,color=discord.Colour.orange())
         embed.add_field(name="この内容でよろしいですか？",value=mes)
@@ -259,7 +270,7 @@ async def on_message(ctx):
         msg = await ctx.channel.send(embed=embed)
         await msg.add_reaction(EmojiOK)
         await msg.add_reaction(EmojiC) 
-        connection.commit()
+    
         return
 
     #boombot連動!match ID検索
@@ -302,6 +313,7 @@ async def on_message(ctx):
 
         mes = f"この内容で正しければ{EmojiOK} キャンセルする場合は{EmojiC}を押してください"
         connection.commit()
+        connection.close()
 
         embed = discord.Embed(title="選手の振り分け",description=content,color=discord.Colour.orange())
         embed.add_field(name="この内容でよろしいですか？",value=mes)
@@ -422,6 +434,7 @@ async def on_reaction_add(reaction, user):
         #reactテーブルのA_svidに追加する。
         cursor.execute(f"INSERT INTO react (A_{svid}) values({userid})")
     connection.commit()
+    connection.close()
 
     #Defenderへの振り分け
     if emoji == EmojiD:
@@ -432,6 +445,7 @@ async def on_reaction_add(reaction, user):
         #reactテーブルのA_svidに追加する。
         cursor.execute(f"INSERT INTO react (D_{svid}) values({userid})")
     connection.commit()
+    connection.close()
 
 
     #完了した時の処理
@@ -500,6 +514,7 @@ async def on_reaction_add(reaction, user):
                 cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
         
         connection.commit()
+        connection.close()
         embed = discord.Embed(title="**勝敗結果**",description='Attackerが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
         await channel.send(embed=embed)
         clean_match(svid)
@@ -527,6 +542,7 @@ async def on_reaction_add(reaction, user):
                     content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
                     embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
                     await channel.send(embed=embed)
+                    connection.close()
                     return                
             #D側の登録処理
             cursor.execute(f"select D_{svid} from react where D_{svid} is not null")
@@ -534,6 +550,7 @@ async def on_reaction_add(reaction, user):
             for i in D:
                 cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
                 cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+            connection.close()
 
 
         #match-bの時の登録処理
@@ -550,6 +567,7 @@ async def on_reaction_add(reaction, user):
                     content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
                     embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
                     await channel.send(embed=embed)
+                    connection.close()
                     return
 
             #D側の登録処理
@@ -560,6 +578,7 @@ async def on_reaction_add(reaction, user):
                 cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
         
         connection.commit()
+        connection.close()
         embed = discord.Embed(title="**勝敗結果**",description='Attackerが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
         await channel.send(embed=embed)
         clean_match(svid)
@@ -569,18 +588,6 @@ async def on_reaction_add(reaction, user):
         embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())
         await channel.send(embed=embed)
         clean_match(svid)
-    
-#特定のリアクションが消えた時に動くやつ。
-@client.event
-async def on_reaction_remove(reaction, user):
-    userid =int(user.id)
-    svid = int(reaction.message.guild.id)
-    if reaction == EmojiA:
-        #reactテーブルのA_svidの人を削除する
-        cursor.execute(f"DELETE FROM react where A_{svid} = {userid}")
-    if reaction == EmojiD:
-        #reactテーブルのD_svidの人を削除する
-        cursor.execute(f"DELETE FROM react where D_{svid} = {userid}")
 
 # Botの起動とDiscordサーバーへの接続
 client.run(TOKEN)

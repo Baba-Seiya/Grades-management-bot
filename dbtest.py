@@ -4,20 +4,17 @@ import MySQLdb
 import config
 # データベースへの接続とカーソルの生成
 connection = MySQLdb.connect(
-    host='localhost',
-    user='root',
-    passwd=config.PASS,
-    db='python_db')
+    host='us-cdbr-east-05.cleardb.net',
+    user='b8b7dbaf799928',
+    passwd="09fe4b17",
+    db='heroku_2864c216fe3c408')
 cursor = connection.cursor()
 table = "PlayerManager"
 id = 588371754737729543
 # ここに実行したいコードを入力します
 try:
-    cursor.execute("SELECT userID, 694718084078108693_win FROM PlayerManager where userID=424207709043425281;")
-    for row in cursor:
-        print(row)
-    if row[1] == 1234567890:
-        print("一致")
+    cursor.execute("UPDATE playermanager SET userName = \"🐏パペガメ🐏#4966\" where userID = 424207709043425281;")
+
 except MySQLdb._exceptions.OperationalError:
     print("karamuga nai")
 
