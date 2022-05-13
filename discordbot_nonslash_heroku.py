@@ -81,7 +81,6 @@ def regist(name, id, svid):
                 if u[1] == None:
                     cursor.execute(f"update {table} set {svid}_win=0, {svid}_match=0, {svid}_rate=0 where userID={id}")
                     connection.commit()
-                    connection.close()
                     return "サーバーを追加登録しました"
             return "登録済みです"
         break
@@ -89,7 +88,6 @@ def regist(name, id, svid):
         #見つからなかったらその人とサーバーを登録する
         cursor.execute(f"insert into {table}(userName,userID,{svid}_win,{svid}_match,{svid}_rate) values(\"{name}\",{id},0,0,0)")
         connection.commit()
-        connection.close()
         return "ユーザを登録をしました"
     
     connection.close()
@@ -101,7 +99,6 @@ def server_serch(svid,id):
     if not column_ser(f"{svid}_win"):
         #無かったらエラーを返す
         connection.commit()
-        connection.close()
         return [False,"サーバーが登録されていません。"]
     lis = []
     #そのidがbotに登録されているか確認する
@@ -109,7 +106,6 @@ def server_serch(svid,id):
     lis = cursor.fetchall()
     if not lis:
         connection.commit()
-        connection.close()
         return [False,"ユーザー登録がされていません。"]
 
     #そのidがサーバーが登録されているか確認する。
@@ -118,7 +114,6 @@ def server_serch(svid,id):
     lis = cursor.fetchall()
     if lis[0][1] == None:
         connection.commit()
-        connection.close()
         return [False,"このサーバーに登録がありません。"]
 
     cursor.execute(f"SELECT * FROM {table} where userID={id}")
@@ -126,7 +121,6 @@ def server_serch(svid,id):
         name = i[0]
 
     connection.commit()
-    connection.close()
     return [True,name]
 
 
