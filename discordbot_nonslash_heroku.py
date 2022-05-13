@@ -3,7 +3,6 @@ import discord
 import asyncio
 import re
 import os
-from pyrsistent import b
 from slacker import Reactions
 import config
 from discord.ext import commands
