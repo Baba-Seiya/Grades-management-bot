@@ -30,6 +30,7 @@ slash_client = SlashCommand(client,sync_commands=True)
 def column_ser(chr): #カラムがあればT無ければFを返す関数。
     try:
         cursor.execute(f"SELECT * FROM {table} where {chr}")
+        connection.commit()
         return True
     except MySQLdb._exceptions.OperationalError:
         return False
@@ -38,6 +39,7 @@ def column_ser(chr): #カラムがあればT無ければFを返す関数。
 def column_ser_react(chr): #カラムがあればT無ければFを返す関数。
     try:
         cursor.execute(f"SELECT * FROM react where {chr}")
+        connection.commit()
         return True
     except MySQLdb._exceptions.OperationalError:
         return False
@@ -47,6 +49,7 @@ def clean_match(svid):
     try:
         cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
         cursor.execute(f"delete from react where A_{svid} or D_{svid}")
+        connection.commit()
     except:
         pass
 
@@ -76,12 +79,14 @@ def regist(name, id, svid):
                 #None（未登録）だったら0を入れて登録する。
                 if u[1] == None:
                     cursor.execute(f"update {table} set {svid}_win=0, {svid}_match=0, {svid}_rate=0 where userID={id}")
+                    connection.commit()
                     return "サーバーを追加登録しました"
             return "登録済みです"
         break
     else:
         #見つからなかったらその人とサーバーを登録する
         cursor.execute(f"insert into {table}(userName,userID,{svid}_win,{svid}_match,{svid}_rate) values(\"{name}\",{id},0,0,0)")
+        connection.commit()
         return "ユーザを登録をしました"
 
     return "登録済みです"
@@ -91,12 +96,14 @@ def server_serch(svid,id):
     #サーバーが登録されているか確認
     if not column_ser(f"{svid}_win"):
         #無かったらエラーを返す
+        connection.commit()
         return [False,"サーバーが登録されていません。"]
     lis = []
     #そのidがbotに登録されているか確認する
     cursor.execute(f"SELECT * FROM {table} where userID={id}")
     lis = cursor.fetchall()
     if not lis:
+        connection.commit()
         return [False,"ユーザー登録がされていません。"]
 
     #そのidがサーバーが登録されているか確認する。
@@ -104,12 +111,14 @@ def server_serch(svid,id):
     cursor.execute(f"SELECT userID, {svid}_win FROM {table} where userID={id}")
     lis = cursor.fetchall()
     if lis[0][1] == None:
+        connection.commit()
         return [False,"このサーバーに登録がありません。"]
 
     cursor.execute(f"SELECT * FROM {table} where userID={id}")
     for i in cursor:
         name = i[0]
 
+    connection.commit()
     return [True,name]
 
 
@@ -250,6 +259,7 @@ async def on_message(ctx):
         msg = await ctx.channel.send(embed=embed)
         await msg.add_reaction(EmojiOK)
         await msg.add_reaction(EmojiC) 
+        connection.commit()
         return
 
     #boombot連動!match ID検索
@@ -411,6 +421,7 @@ async def on_reaction_add(reaction, user):
 
         #reactテーブルのA_svidに追加する。
         cursor.execute(f"INSERT INTO react (A_{svid}) values({userid})")
+    connection.commit()
 
     #Defenderへの振り分け
     if emoji == EmojiD:
@@ -420,6 +431,7 @@ async def on_reaction_add(reaction, user):
             cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")
         #reactテーブルのA_svidに追加する。
         cursor.execute(f"INSERT INTO react (D_{svid}) values({userid})")
+    connection.commit()
 
 
     #完了した時の処理
