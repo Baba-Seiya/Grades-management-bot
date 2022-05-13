@@ -10,7 +10,7 @@ from discord_slash import SlashCommand, SlashContext
 # MySQLdbのインポート
 import MySQLdb
 
-guild_ids = [int(os.environ.get("GUILD_ID1")),int(os.environ.get("GUILD_ID2")),int(os.environ.get("GUILD_ID3"))] # Put your server ID in this array.
+guild_ids = [] # Put your server ID in this array.
  
 # データベースへの接続とカーソルの生成
 connection = MySQLdb.connect(
