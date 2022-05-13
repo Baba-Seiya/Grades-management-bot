@@ -10,8 +10,7 @@ from discord_slash import SlashCommand, SlashContext
 # MySQLdbのインポート
 import MySQLdb
 
-guild_ids = [] # Put your server ID in this array.
- 
+
 # データベースへの接続とカーソルの生成
 connection = MySQLdb.connect(
     host=os.environ.get("DB_HOSTNAME"),
@@ -141,7 +140,7 @@ async def on_ready():
     print('ログインしました')
 
 #-------------------プログラムを終了する時に必要な動作------------------
-@slash_client.slash(name="exit",description="botの終了。このコマンドまじで意味ないしリスクでしかない。なんなん？", guild_ids=guild_ids)
+@slash_client.slash(name="exit",description="botの終了。このコマンドまじで意味ないしリスクでしかない。なんなん？")
 async def _slash_exit(ctx: SlashContext):
     await ctx.send(content="bye")
     # 保存を実行
