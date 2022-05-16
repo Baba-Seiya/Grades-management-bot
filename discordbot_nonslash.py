@@ -423,37 +423,56 @@ async def on_reaction_add(reaction, user):
     userid = int(user.id)
     channel = client.get_channel(reaction.message.channel.id)
     svid = int(reaction.message.guild.id)
+    reactflag = False
+
+    #そのメッセージのリアクション
     reactions = reaction.message.reactions
+    
+    #ひとつ前のリアクションを読み取ってリアクションタイプかを判定する。
+    msgList = await channel.history(limit=2).flatten()
+    for i in msgList:
+        reactions_before = i.reactions
 
     if user.bot: #botの場合無視する
         return
     emoji =  reaction.emoji
 
-    #選手の振り分け  (リアクションタイプ)
-    #Attackerへの振り分け
-    if emoji == EmojiA:
-        #サーバーが登録されているか確認
-        if not column_ser_react(f"A_{svid}"):
-            #無かった場合追加する
-            cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")
-
-        #reactテーブルのA_svidに追加する。
-        cursor.execute(f"INSERT INTO react (A_{svid}) values({userid})")
-        connection.commit()
-
-    #Defenderへの振り分け
-    if emoji == EmojiD:
-                #サーバーが登録されているか確認
-        if not column_ser_react(f"A_{svid}"):
-            #無かった場合追加する
-            cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")
-        #reactテーブルのA_svidに追加する。
-        cursor.execute(f"INSERT INTO react (D_{svid}) values({userid})")
-        connection.commit()
-
-
-    #完了した時の処理
+    #完了した時の処理（リアクションタイプ時振り分け処理）
     if emoji == EmojiOK:
+        #リアクションタイプかどうかを判定する
+        for i in reactions:
+            if i.emoji == EmojiA or i.emoji ==  EmojiD:
+                reactflag = True
+                break
+        
+        #リアクションタイプだった場合
+        if reactflag:
+            for i in reactions:
+                #絵文字がAの場合
+                if i.emoji == EmojiA:
+                    
+                    #userIDをリアクションから抜き出す
+                    async for user in i.users():
+                        if user.bot :
+                            continue
+                        userid = int(user.id)                    
+
+                        #reactテーブルのA_svidに追加する。
+                        cursor.execute(f"INSERT INTO react (A_{svid}) values({userid})")
+                        connection.commit()
+
+                if i.emoji == EmojiD:
+                    
+                    #userIDをリアクションから抜き出す
+                    async for user in i.users():
+                        if user.bot :
+                            continue
+                        userid = int(user.id)     
+
+                        #reactテーブルのA_svidに追加する。
+                        cursor.execute(f"INSERT INTO react (D_{svid}) values({userid})")
+                        connection.commit()
+            
         content = f"どっちが勝ちましたか?\n Attackerが勝った場合{EmojiW} 負けた場合{EmojiL}を押してください キャンセルは{EmojiC}"
         embed = discord.Embed(title="**勝敗登録**",description=content,color=discord.Colour.orange())
         msg = await channel.send(embed=embed)
@@ -468,8 +487,8 @@ async def on_reaction_add(reaction, user):
         reactflag = False
 
         #リアクションの中にリアクションタイプで使用する絵文字があったらフラグを立てる
-        for i in reactions:
-            if i.emoji == EmojiA or EmojiD:
+        for i in reactions_before:
+            if i.emoji == EmojiA or i.emoji ==  EmojiD:
                 reactflag = True
 
         #if 内はリアクションタイプの時(A側の登録処理)
@@ -530,8 +549,8 @@ async def on_reaction_add(reaction, user):
         reactflag = False
 
         #リアクションの中にリアクションタイプで使用する絵文字があったらフラグを立てる
-        for i in reactions:
-            if i.emoji == EmojiA or EmojiD:
+        for i in reactions_before:
+            if i.emoji == EmojiA or i.emoji ==  EmojiD:
                 reactflag = True
 
         #if 内はリアクションタイプの時(A側の登録処理)
