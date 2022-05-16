@@ -14,10 +14,10 @@ guild_ids = [int(config.GUILD_ID1),int(config.GUILD_ID2),int(config.GUILD_ID3)] 
  
 # データベースへの接続とカーソルの生成
 connection = MySQLdb.connect(
-    host='localhost',
-    user='root',
+    host=config.HOSTNAME,
+    user=config.USER,
     passwd=config.PASS,
-    db='python_db')
+    db=config.DB)
 cursor = connection.cursor()
 
 # 自分のBotのアクセストークンに置き換えてください
@@ -139,18 +139,6 @@ EmojiC = "🚫"
 async def on_ready():
     # 起動したらターミナルにログイン通知が表示される
     print('ログインしました')
-
-#-------------------プログラムを終了する時に必要な動作------------------
-@slash_client.slash(name="exit",description="botの終了。このコマンドまじで意味ないしリスクでしかない。なんなん？", guild_ids=guild_ids)
-async def _slash_exit(ctx: SlashContext):
-    await ctx.send(content="bye")
-    # 保存を実行
-    connection.commit()
-
-    # 接続を閉じる
-    connection.close()
-    print("正常に終了しました")
-    exit()
 
 # ------------------スラッシュコマンドにより動作する処理------------
 #-------------------これをコマンド式に戻す----------------------------
@@ -322,6 +310,38 @@ async def on_message(ctx):
     if ctx.content[:5] == "!call":
         emoji = ctx.content[23:]
         channel = client.get_channel(ctx.channel.id)
+        msg =f"集合\n"
+        flag = False #messegeidの指定があるかないかを判定するフラグ
+        
+        #messegeidの指定が無かった場合（例!call<emoji>）
+        try:
+            flag = ctx.content[5:11]
+            int(flag)
+            flag = False
+        
+        except (ValueError) :
+            flag = True
+
+        if flag :
+            emoji = ctx.content[5:]
+            #そのリアクションがついてるメッセージを読みだす
+            msgList = await channel.history(limit=30).flatten() 
+            
+            for i in msgList:
+                reactions = i.reactions
+
+                for j in reactions:
+                    #メッセージに対してその絵文字があるか確認
+                    if j.emoji == emoji:
+                        async for user in j.users():
+                            if user.bot :
+                                continue
+                            msg += f"<@{int(user.id)}>\n"                                 
+            embed = discord.Embed(title="**呼び出し**",description=msg,color=discord.Colour.blue())
+            await channel.send(embed=embed)
+            
+
+        #messegeidの指定があった場合
         if len(ctx.content) > 17:
             ctx = await channel.fetch_message(int(ctx.content[5:23]))
             reaction = ctx.reactions
@@ -371,9 +391,14 @@ NEW!サーバー別に記録できるようになりましたNEW!
             value="```サーバー別に記録するようになったので別サーバーにて使用する際は!registをしてください。○○を追加登録しました！と表示されたらサーバー別登録完了です。```",
             inline=False)
         embed.add_field(
-            name="２.試合結果の登録(boom bot連動タイプ)",
+            name="２.１試合結果の登録(boom bot連動タイプ)",
             value="""`!match-b`
             ```!match-bと入力するとboom botの最新の./valo teamの結果を参照してAttackerとDefenderを振り分けてくれます。振り分けが正しければOKリアクションをしてください。後は言われた通りやってください。(!match-b‹messege id›でメッセージIDを指定することも可能)``````注意！（入力したテキストチャンネルチャンネルid とboom bot が同じテキストチャンネルにメッセージがある必要があります）```""",
+            inline=False)
+        embed.add_field(
+            name="２.２試合結果の登録(リアクションタイプ)",
+            value="""`!match`
+            ```!matchと入力すると、メッセージと共にリアクションが追加され、メッセージの指示に従いリアクションを追加してチーム分けをします。振り分けが終わったらOKリアクションを押して、後は言われたとおりにやってください。```""",
             inline=False)
         embed.add_field(
             name="３．試合結果の表示",
@@ -385,7 +410,8 @@ NEW!サーバー別に記録できるようになりましたNEW!
             value="""`!call`
             ```時間にルーズなゲーマーが多いため仕方なく実装しました。
 !call<messegeid><メッセージについてる絵文字>（例）/call!968048735617695744🐑
-↑を使用するとそのメッセージについてる指定したリアクションに反応した人を一斉メンション出来ます。```""",
+↑を使用するとそのメッセージについてる指定したリアクションに反応した人を一斉メンション出来ます。
+NEW！！　/call<絵文字>直近のその絵文字がついてるメッセージのリアクションをメンションするようになりました```""",
             inline=False)
         await ctx.channel.send(embed=embed)
 
