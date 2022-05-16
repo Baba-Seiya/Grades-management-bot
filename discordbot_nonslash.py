@@ -298,6 +298,7 @@ async def on_message(ctx):
             cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")  
         content = f"{EmojiA} = Attacker   {EmojiD} = Defender を選択して、完了したら{EmojiOK}を押してください。キャンセルは{EmojiC}"
         embed = discord.Embed(title="**match**",description=content,color=discord.Colour.orange())
+        connection.commit()
         msg = await ctx.channel.send(embed=embed)
 
         await msg.add_reaction(EmojiA)
@@ -438,6 +439,7 @@ async def on_reaction_add(reaction, user):
 
         #reactテーブルのA_svidに追加する。
         cursor.execute(f"INSERT INTO react (A_{svid}) values({userid})")
+        connection.commit()
 
     #Defenderへの振り分け
     if emoji == EmojiD:
@@ -447,6 +449,7 @@ async def on_reaction_add(reaction, user):
             cursor.execute(f"ALTER TABLE react ADD A_{svid} bigint NULL, ADD D_{svid} bigint NULL")
         #reactテーブルのA_svidに追加する。
         cursor.execute(f"INSERT INTO react (D_{svid}) values({userid})")
+        connection.commit()
 
 
     #完了した時の処理
@@ -479,6 +482,7 @@ async def on_reaction_add(reaction, user):
                 try:
                     cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
                     cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                    connection.commit()
                 except:
                     content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
                     embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
@@ -490,6 +494,7 @@ async def on_reaction_add(reaction, user):
             D = cursor
             for i in D:
                 cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                connection.commit()
        
         #match-bの時の登録処理
         else:
@@ -538,6 +543,7 @@ async def on_reaction_add(reaction, user):
                 #PlayerManagaerの更新
                 try:
                     cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                    connection.commit()
                 except:
                     content = "登録してる人がいません。!registからユーザー登録してください。!helpからヘルプが見れます。"
                     embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())    
@@ -549,6 +555,7 @@ async def on_reaction_add(reaction, user):
             for i in D:
                 cursor.execute(f"update PlayerManager set {svid}_win={svid}_win+1 where userID={i[0]}")
                 cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
+                connection.commit()
 
 
         #match-bの時の登録処理
@@ -584,18 +591,6 @@ async def on_reaction_add(reaction, user):
         embed = discord.Embed(title="**エラー**",description=content,color=discord.Colour.red())
         await channel.send(embed=embed)
         clean_match(svid)
-    
-#特定のリアクションが消えた時に動くやつ。
-@client.event
-async def on_reaction_remove(reaction, user):
-    userid =int(user.id)
-    svid = int(reaction.message.guild.id)
-    if reaction == EmojiA:
-        #reactテーブルのA_svidの人を削除する
-        cursor.execute(f"DELETE FROM react where A_{svid} = {userid}")
-    if reaction == EmojiD:
-        #reactテーブルのD_svidの人を削除する
-        cursor.execute(f"DELETE FROM react where D_{svid} = {userid}")
 
 # Botの起動とDiscordサーバーへの接続
 client.run(TOKEN)
