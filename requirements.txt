@@ -1,8 +1,0 @@
-async-timeout==3.0.1
-discord-py-interactions==4.0.2
-discord-py-slash-command==3.0.3
-discord.py==1.7.3
-distro==1.4.0
-mysqlclient==2.1.0
-python-dotenv==0.19.2
-slacker==0.14.0
