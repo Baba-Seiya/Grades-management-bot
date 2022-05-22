@@ -29,6 +29,7 @@ slash_client = SlashCommand(client,sync_commands=True)
 #--------------------------------------------定義関数--------------------------------------------
 #db関連の関数
 def column_ser(chr): #カラムがあればT無ければFを返す関数。
+    cursor = connection.cursor()
     try:
         cursor.execute(f"SELECT * FROM {table} where {chr}")
         return True
@@ -37,6 +38,7 @@ def column_ser(chr): #カラムがあればT無ければFを返す関数。
 
 #db関連の関数
 def column_ser_react(chr): #カラムがあればT無ければFを返す関数。
+    cursor = connection.cursor()
     try:
         cursor.execute(f"SELECT * FROM react where {chr}")
         return True
@@ -45,9 +47,11 @@ def column_ser_react(chr): #カラムがあればT無ければFを返す関数�
 
 #matchのADをリセットする関数。
 def clean_match(svid):
+    cursor = connection.cursor()
     try:
         cursor.execute(f"delete from matching where A_{svid} or D_{svid}")
         cursor.execute(f"delete from react where A_{svid} or D_{svid}")
+
     except:
         pass
 
@@ -60,6 +64,7 @@ def clean(svid):
 
 #選手の登録する際の関数
 def regist(name, id, svid):
+    cursor = connection.cursor()
     #サーバーが登録されているか確認
     if not column_ser(f"{svid}_win"):
         #無かった場合追加する
@@ -89,6 +94,7 @@ def regist(name, id, svid):
 
 #サーバーにその人の登録があるか確認する関数。(戻り値[結果TorF,人物名orエラー内容])
 def server_serch(svid,id):
+    cursor = connection.cursor()
     #サーバーが登録されているか確認
     if not column_ser(f"{svid}_win"):
         #無かったらエラーを返す
@@ -161,6 +167,7 @@ async def on_message(ctx):
         svid = int(ctx.guild.id)
         msg = "```"
         if column_ser(f"{svid}_win"):
+            cursor = connection.cursor()
             cursor.execute(f"SELECT userName, userID, {svid}_win, {svid}_match, {svid}_rate FROM {table} where {svid}_win is not null")
             for i in cursor:
                 #勝率を更新する 
@@ -180,6 +187,7 @@ async def on_message(ctx):
         
     #boombot連携match
     if ctx.content == "!match-b":
+        cursor = connection.cursor()
         channel = client.get_channel(ctx.channel.id)
         svid = int(ctx.guild.id) 
         content=f""
@@ -243,6 +251,7 @@ async def on_message(ctx):
 
     #boombot連動!match ID検索
     if ctx.content[:8] == "!match-b":
+        cursor = connection.cursor()
         channel = client.get_channel(ctx.channel.id)
         svid = int(ctx.guild.id) 
         content=f""
@@ -291,6 +300,7 @@ async def on_message(ctx):
     
     #戦績の記録（手動メンションタイプ）
     if ctx.content == "!match":
+        cursor = connection.cursor()
         svid = int(ctx.guild.id)
         #サーバーが登録されているか確認
         if not column_ser_react(f"A_{svid}"):
@@ -493,6 +503,7 @@ async def on_reaction_add(reaction, user):
 
         #if 内はリアクションタイプの時(A側の登録処理)
         if reactflag : 
+            cursor = connection.cursor()
             #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
             cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
             A = cursor
@@ -517,6 +528,7 @@ async def on_reaction_add(reaction, user):
        
         #match-bの時の登録処理
         else:
+            cursor = connection.cursor()
             #match-bの時の登録処理
             #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
             cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
@@ -555,6 +567,7 @@ async def on_reaction_add(reaction, user):
 
         #if 内はリアクションタイプの時(A側の登録処理)
         if reactflag : 
+            cursor = connection.cursor()
             #reactテーブルからそのサーバーのAカラムからNULL以外を取り出す、
             cursor.execute(f"select A_{svid} from react where A_{svid} is not null")
             A = cursor
@@ -579,6 +592,7 @@ async def on_reaction_add(reaction, user):
 
         #match-bの時の登録処理
         else:
+            cursor = connection.cursor()
             #match-bの時の登録処理
             #matchingテーブルからそのサーバーのAカラムからNULL以外を取り出す、
             cursor.execute(f"select A_{svid} from matching where A_{svid} is not null")
