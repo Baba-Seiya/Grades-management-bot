@@ -194,7 +194,7 @@ async def on_message(ctx):
         #メッセージを読みだす
         msgList = await channel.history(limit=30).flatten() 
         for i in msgList:
-            match_result = re.match(r"\*\*Information\*\*", i.content)
+            match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
             if match_result:
                 msgID = i.id
                 break
