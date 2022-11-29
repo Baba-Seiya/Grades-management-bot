@@ -4,6 +4,7 @@ import asyncio
 import re
 import os
 import config
+import keep_alive
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
 # MySQLdbのインポート
@@ -625,4 +626,5 @@ async def on_reaction_add(reaction, user):
         clean_match(svid)
 
 # Botの起動とDiscordサーバーへの接続
+keep_alive()
 client.run(TOKEN)
