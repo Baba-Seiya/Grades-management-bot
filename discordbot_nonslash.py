@@ -2,26 +2,25 @@
 import discord
 import asyncio
 import re
-from pyrsistent import b
-from slacker import Reactions
+import os
 import config
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
 # MySQLdbのインポート
 import MySQLdb
 
-guild_ids = [int(config.GUILD_ID1),int(config.GUILD_ID2),int(config.GUILD_ID3)] # Put your server ID in this array.
+guild_ids = [int(os.environ["GUILD_ID1"]),int(os.environ["GUILD_ID2"]),int(os.environ["GUILD_ID3"])] # Put your server ID in this array.
  
 # データベースへの接続とカーソルの生成
 connection = MySQLdb.connect(
-    host=config.HOSTNAME,
-    user=config.USER,
-    passwd=config.PASS,
-    db=config.DB)
+    host=os.environ["HOSTNAME"],
+    user=os.environ["USER"],
+    passwd=os.environ["PASS"],
+    db=os.environ["DB"])
 cursor = connection.cursor()
 
 # 自分のBotのアクセストークンに置き換えてください
-TOKEN = config.MY_TOKEN
+TOKEN = os.environ["MY_TOKEN"]
 
 # 接続に必要なオブジェクトを生成
 client = discord.Client(intents=discord.Intents.all())
