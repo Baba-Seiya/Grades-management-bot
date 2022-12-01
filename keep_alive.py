@@ -1,11 +1,15 @@
 from flask import Flask
 from threading import Thread
+from flask import Flask, render_template
 
-app = Flask('')
+app = Flask(__name__)
 
 @app.route('/')
 def main():
-    return app.send_static_file('index.html')
+    return render_template("index.html")
+@app.route("/company.html")
+def comp():
+    return render_template("company.html")
 
 def run():
     app.run(host="0.0.0.0", port=8000)
