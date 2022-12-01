@@ -17,7 +17,8 @@ connection = MySQLdb.connect(
     host=os.environ["HOSTNAME"],
     user=os.environ["USER"],
     passwd=os.environ["PASS"],
-    db=os.environ["DB"])
+    db=os.environ["DB"],
+    charset="utf8mb4")
 cursor = connection.cursor()
 
 # 自分のBotのアクセストークンに置き換えてください
