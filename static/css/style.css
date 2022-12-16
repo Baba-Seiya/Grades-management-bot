@@ -157,6 +157,13 @@ main p {
 h2 + h3, h2 + p, h3 + p {
     margin-top: -20px;
 }
+main .box {
+    margin: 50px 20px;
+	width: 100%;
+	height: 400px;
+	border: 1px solid #000;      /* わかりやすくボーダーを引く */
+	overflow-y: scroll;          /* 縦方向にスクロール可能にする */
+  }
 
 /*フッター設定
 ---------------------------------------------------------------------------*/
@@ -288,6 +295,27 @@ ul.icon img:hover {
 .slick-dots li.slick-active button {
 	background: #9b8d69;	/*色*/
 }
+
+.btn-container {
+	text-align: center;
+  }
+  
+  button {
+	width: 30%;
+	height: 50px;
+	font-size: 18px;
+	font-weight: bold;
+	cursor: pointer;
+  }
+  
+  button:hover {
+   opacity: 0.7;
+  }
+  
+  .hidden {
+	display: none;
+  }
+
 
 /*テーブル
 ---------------------------------------------------------------------------*/
@@ -453,3 +481,4 @@ main {
 /*　※注意！　下の閉じカッコ　}　は800px以上の設定に必要なので、うっかり削除しないように。　*/
 
 }
+

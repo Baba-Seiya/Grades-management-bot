@@ -11,6 +11,16 @@ def main():
 def comp():
     return render_template("company.html")
 
+@app.route("/guide.html")
+def guide():
+    return render_template("guide.html")
+@app.route("/invitation.html")
+def invitation():
+    return render_template("/invitation.html")
+@app.route("/me.html")
+def me():
+    return render_template("me.html")
+
 def run():
     app.run(host="0.0.0.0", port=8000)
 
