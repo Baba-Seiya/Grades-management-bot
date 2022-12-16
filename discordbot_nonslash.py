@@ -435,6 +435,7 @@ async def on_reaction_add(reaction, user):
     channel = client.get_channel(reaction.message.channel.id)
     svid = int(reaction.message.guild.id)
     reactflag = False
+    cursor = connection.cursor()
 
     #そのメッセージのリアクション
     reactions = reaction.message.reactions
