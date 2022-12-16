@@ -40,7 +40,7 @@ dd {margin: 0;}
 table {border-collapse:collapse;}
 
 /*画像全般の設定*/
-img {border: none;max-width: 100%;height: auto;vertical-align: middle;}
+img {border: none;max-width: 100%;height: auto;vertical-align: middle;margin:  auto;}
 
 /*section全般の設定*/
 section + section {
