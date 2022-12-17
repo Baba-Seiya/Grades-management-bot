@@ -318,16 +318,16 @@ async def on_message(ctx):
         await msg.add_reaction(EmojiC)
         clean_match(svid)
 
-    #!call<messageid>emoji　で指定したリアクションの人を呼ぶ。
+    #!call!<messageid>emoji　で指定したリアクションの人を呼ぶ。
     if ctx.content[:5] == "!call":
-        emoji = ctx.content[23:]
+        emoji = ctx.content[24:]
         channel = client.get_channel(ctx.channel.id)
         msg =f"集合\n"
         flag = False #messegeidの指定があるかないかを判定するフラグ
         
         #messegeidの指定が無かった場合（例!call<emoji>）
         try:
-            flag = ctx.content[5:11]
+            flag = ctx.content[6:11]
             int(flag)
             flag = False
         
@@ -337,7 +337,7 @@ async def on_message(ctx):
         if flag :
             emoji = ctx.content[5:]
             #そのリアクションがついてるメッセージを読みだす
-            msgList = await channel.history(limit=30).flatten() 
+            msgList = await channel.history(limit=150).flatten() 
             
             for i in msgList:
                 reactions = i.reactions
@@ -355,7 +355,7 @@ async def on_message(ctx):
 
         #messegeidの指定があった場合
         if len(ctx.content) > 17:
-            ctx = await channel.fetch_message(int(ctx.content[5:23]))
+            ctx = await channel.fetch_message(int(ctx.content[5:24]))
             reaction = ctx.reactions
             msg =f"集合\n"
             #await channel.send(f"集合\n")
