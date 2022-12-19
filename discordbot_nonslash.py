@@ -193,14 +193,16 @@ async def on_message(ctx):
         svid = int(ctx.guild.id) 
         content=f""
         #メッセージを読みだす
-        msgList = await channel.history(limit=30).flatten() 
+        msgList = await channel.history(limit=50).flatten() 
         for i in msgList:
-            match_result = re.match(r"\*\*Attacker Side\*\*", i.content)
-            if match_result:
-                msgID = i.id
-                break
+            for j in i.embeds:
+                match_result = j.title 
+                if match_result == "Attacker Side":
+                    msgID = i.id
+                    break
             else:
                 continue
+            break
 
         try:
             message = await channel.fetch_message(msgID) 
@@ -212,8 +214,10 @@ async def on_message(ctx):
         
         #正規表現にてユーザーidを抜き出す
         clean_match(svid)
-        msg = message.content
-        id_list = re.findall(r'@[\S]{1,18}',msg)
+        msg = message.embeds
+        id_list = re.findall(r'@[\S]{1,18}',msg[0].description)
+        defender = re.findall(r'@[\S]{1,18}',msg[1].description)
+        id_list.extend(defender)
         x = round(len(id_list)/2)
         #Attackerに振り分ける処理
         content += "Attacer:\n"
