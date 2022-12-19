@@ -260,14 +260,16 @@ async def on_message(ctx):
         channel = client.get_channel(ctx.channel.id)
         svid = int(ctx.guild.id) 
         content=f""
-        if len(ctx.content) == 26:
+        if len(ctx.content) > 25:
             clean_match(svid)
             content = f""
             ctx = await channel.fetch_message(int(ctx.content[8:]))
 
             #正規表現にてユーザーidを抜き出す
-            msg = ctx.content
-            id_list = re.findall(r'@[\S]{1,18}',msg)
+            msg = ctx.embeds
+            id_list = re.findall(r'@[\S]{1,18}',msg[0].description)
+            defender = re.findall(r'@[\S]{1,18}',msg[1].description)
+            id_list.extend(defender)
             x = round(len(id_list)/2)
 
         #Attackerに振り分ける処理
