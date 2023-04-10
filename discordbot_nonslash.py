@@ -623,7 +623,7 @@ async def on_reaction_add(reaction, user):
                 cursor.execute(f"update PlayerManager set {svid}_match={svid}_match+1 where userID={i[0]}")
         
         connection.commit()
-        embed = discord.Embed(title="**勝敗結果**",description='Attackerが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
+        embed = discord.Embed(title="**勝敗結果**",description='Defenderが勝ちとして記録しました。戦績を見る場合は!score',color=discord.Colour.orange())
         await channel.send(embed=embed)
         clean_match(svid)
 
