@@ -297,7 +297,7 @@ async def match_r_command(ctx):
 @slash.slash(name="call", description="リアクションした人をメンションして呼びます",guild_ids = guild_ids, options=[
     create_option(
         name="emoji",
-        description="リアクションを入れてください",
+        description="リアクションを入れてください（:を入力すると絵文字の候補が出ます）",
         option_type=3,
         required=True
     ),
