@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord_slash import SlashCommand
 from discord_slash.utils.manage_commands import create_option
 
+
 # MySQLdbのインポート
 import MySQLdb
 
@@ -191,7 +192,7 @@ async def score_command(ctx):
     await ctx.send(embed=embed)
 
 #--------------------match-bコマンド-----------------------
-@slash.slash(name="match-b", description="boom-botの結果を利用して選手を振り分けます",guild_ids = guild_ids, options=[
+@slash.slash(name="match-b", description="boom-botの結果を利用して選手を振り分けます", options=[
     create_option(
         name="msgid",
         description="メッセージIDを指定する場合は入れてください",
@@ -274,7 +275,7 @@ async def match_command(ctx, msgid=None):
 
 
 #-----------------------------match-r--------------------
-@slash.slash(name="match-r", description="リアクションを使用して選手を振り分けます",guild_ids = guild_ids)
+@slash.slash(name="match-r", description="リアクションを使用して選手を振り分けます")
 async def match_r_command(ctx):
     await ctx.defer()
     cursor = connection.cursor()
@@ -294,7 +295,9 @@ async def match_r_command(ctx):
     await msg.add_reaction(EmojiC)
     clean_match(svid)
 
-@slash.slash(name="call", description="リアクションした人をメンションして呼びます",guild_ids = guild_ids, options=[
+#-------------------------call-------------------------------
+
+@slash.slash(name="call", description="リアクションした人をメンションして呼びます", options=[
     create_option(
         name="emoji",
         description="リアクションを入れてください（:を入力すると絵文字の候補が出ます）",
@@ -308,7 +311,7 @@ async def match_r_command(ctx):
         required=False   
     )
 ])
-async def match_command(ctx, emoji, msgid=None):
+async def call_command(ctx, emoji, msgid=None):
     await ctx.defer()
     channel = client.get_channel(ctx.channel.id)
     msg =f"集合\n"
@@ -356,7 +359,9 @@ async def match_command(ctx, emoji, msgid=None):
         embed = discord.Embed(title="**呼び出し**",description=msg,color=discord.Colour.blue())
         await ctx.send(embed=embed)
         
-@slash.slash(name="help", description="botの使用方法を表示します。",guild_ids = guild_ids)
+
+#----------------------------HELP-----------------------------------
+@slash.slash(name="help", description="botの使用方法を表示します。")
 async def help_command(ctx):
         content="""１．選手登録を行う
 記録する選手はまず選手登録が必要になります。
